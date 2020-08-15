@@ -1,8 +1,4 @@
-import json
 import os
-from typing import Optional
-import datetime
-import pprint as pp
 import datetime
 
 import requests
@@ -63,18 +59,6 @@ class ROBO:
         json_list = response['data']['list']
         id_list = [doc['data']['id'] for doc in json_list]
         return id_list
-
-    # def get_pdf_url(self, doc_id_list: list) -> dict:
-    #     url_list = {}
-    #     download_api_url = f'https://gw.datayes.com/rrp_adventure/web/externalReport/'
-    #
-    #     for doc_id in doc_id_list:
-    #         headers = self.headers.copy()
-    #         download_url = download_api_url + str(doc_id)
-    #         response = self.s.get(url=download_url, headers=headers).json()
-    #         url_list.update({doc_id: response['data']['downloadUrl']})
-    #
-    #     return url_list
 
     def download_pdf(self, doc_id_list: list):
         download_api_url = f'https://gw.datayes.com/rrp_adventure/web/externalReport/'
