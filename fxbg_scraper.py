@@ -42,7 +42,7 @@ class FXBG:
             'user-agent': str(UserAgent().random)
         }
 
-    def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> list:
+    def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> dict:
         """
         根据搜索结果及搜索条件获取所有符合条件pdf的id
         :param search_keyword: 标题需要包含的关键词（公司名）
@@ -78,19 +78,19 @@ class FXBG:
             'VERSION': '1.0.0',
         })
         response = self.s.post(url=search_url, data=json.dumps(payload), headers=headers).json()
-        id_list = [doc['docId'] for doc in response['data']['dataList']]
+        id_list = {doc['docId']: doc for doc in response['data']['dataList']}
         return id_list
 
-    def get_pdf_url(self, doc_id_list: list, doc_type: Optional[str] = '2') -> dict:
+    def get_pdf_url(self, doc_list: dict, doc_type: Optional[str] = '2') -> dict:
         """
         根据文档的id和类型选择获取pdf下载链接，该链接为在线查看pdf文档的链接
-        :param doc_id_list: a list of 所有文档的id
+        :param doc_list: a list of 所有文档的id
         :param doc_type: 文档的类型，默认为2(pdf)
         :return: url_list: 所有所需要下载的pdf文件的下载链接， 形式为{pdf_id: pdf_url}
         """
-        url_list = {}
+
         download_api_url = f'https://api.mofoun.com/mofoun/file/pdf/url'
-        for doc_id in doc_id_list:
+        for doc_id in doc_list:
             params = {
                 'docId': doc_id,
                 'docType': doc_type
@@ -105,10 +105,11 @@ class FXBG:
             response = self.s.get(url=download_api_url, headers=headers, params=params).json()
             # time_interval = random.randint(5, 8)
             # time.sleep(time_interval)
+            updated_doc = doc_list[doc_id]
+            updated_doc.update({'download_url': 'https://oss-buy.hufangde.com' + response['data']})
+            doc_list.update({doc_id: updated_doc})
 
-            url_list.update({doc_id: 'https://oss-buy.hufangde.com' + response['data']})
-
-        return url_list
+        return doc_list
 
     def download_pdf(self, search_keyword: str, url_list: dict):
         """
@@ -124,10 +125,14 @@ class FXBG:
         num_keyword = 30
 
         for pdf_id in url_list:
-            content = self.s.get(url=url_list[pdf_id], headers=self.headers).content
+            content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
+            content.encoding = 'utf-8'
 
+            content = content.content
             cache_path = 'cache'
             cache_save_path = os.path.join(cache_path, str(pdf_id) + '.pdf')
+
+            # Save cache pdf
             with open(cache_save_path, 'wb') as f:
                 f.write(content)
 
@@ -138,12 +143,14 @@ class FXBG:
 
             if keyword_count >= num_keyword:
                 shutil.move(cache_save_path, save_path)
-
                 print('downloading pdf with id: %d' % pdf_id)
+                doc_info = url_list[pdf_id]
+                txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
+                print(doc_info)
+                with open(txt_save_path, 'w') as f:
+                    json.dump(doc_info, f)
                 pdf_count += 1
-                # save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
-                # with open(save_path, 'wb') as f:
-                #     f.write(content)
+
             else:
                 os.remove(cache_save_path)
 
@@ -159,5 +166,5 @@ class FXBG:
 
 if __name__ == '__main__':
     fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
-    fxbg_scraper.run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='20', num_years=1)
+    fxbg_scraper.run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='40', num_years=1)
     # print(fxbg_scraper.get_pdf_id(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='20', num_years=5))
