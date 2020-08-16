@@ -4,6 +4,7 @@ import random
 from typing import Optional
 import datetime
 import shutil
+import pprint as pp
 import time
 
 import requests
@@ -105,7 +106,14 @@ class FXBG:
             response = self.s.get(url=download_api_url, headers=headers, params=params).json()
             # time_interval = random.randint(5, 8)
             # time.sleep(time_interval)
-            updated_doc = doc_list[doc_id]
+            doc = doc_list[doc_id]
+            updated_doc = {}
+            updated_doc.update({'doc_id': doc_id})
+            updated_doc.update({'download_url': 'https://oss-buy.hufangde.com' + response['data']})
+            updated_doc.update({'org_name': doc['orgName']})
+            updated_doc.update({'page_num': doc['pageNum']})
+            updated_doc.update({'score': doc['score']})
+            updated_doc.update({'title': doc['title']})
             updated_doc.update({'download_url': 'https://oss-buy.hufangde.com' + response['data']})
             doc_list.update({doc_id: updated_doc})
 
@@ -144,11 +152,14 @@ class FXBG:
             if keyword_count >= num_keyword:
                 shutil.move(cache_save_path, save_path)
                 print('downloading pdf with id: %d' % pdf_id)
+
+                # Saving doc info
                 doc_info = url_list[pdf_id]
-                txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
-                print(doc_info)
-                with open(txt_save_path, 'w') as f:
-                    json.dump(doc_info, f)
+                doc_info.update({'content': content_text})
+                txt_save_path = os.path.join(current_path, str(pdf_id) + '.txt')
+
+                with open(txt_save_path, 'w', encoding='utf-8') as f:
+                    json.dump(doc_info, f, ensure_ascii=False, indent=4)
                 pdf_count += 1
 
             else:
@@ -166,5 +177,5 @@ class FXBG:
 
 if __name__ == '__main__':
     fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
-    fxbg_scraper.run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='40', num_years=1)
+    fxbg_scraper.run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='20', num_years=1)
     # print(fxbg_scraper.get_pdf_id(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='20', num_years=5))
