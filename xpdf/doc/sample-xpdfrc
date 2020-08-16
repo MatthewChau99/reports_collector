@@ -51,6 +51,7 @@
 # simply be ignored).
 
 #fontDir		/usr/local/fonts/bakoma
+fontDir			/System/Library/Fonts
 
 #----- PostScript output control
 
@@ -66,7 +67,8 @@
 # The Latin1, ASCII7, and UTF-8 encodings are built into Xpdf.  Other
 # encodings are available in the language support packages.
 
-#textEncoding		UTF-8
+textEncoding		UTF-8
+textPageBreaks		no
 
 # Choose the end-of-line convention for multi-line copy-and-past and
 # for pdftotext output.  The available options are unix, mac, and dos.
@@ -77,10 +79,20 @@
 
 # Enable FreeType, and anti-aliased text.
 
-#enableFreeType		yes
+enableFreeType		yes
 #antialias		yes
 
 # Set the command used to run a web browser when a URL hyperlink is
 # clicked.
 
 #launchCommand  viewer-script
+
+#----- begin Chinese Simplified support package (2011-sep-02)
+cidToUnicode    Adobe-GB1       /usr/local/share/xpdf/chinese-simplified/Adobe-GB1.cidToUnicode
+unicodeMap      ISO-2022-CN     /usr/local/share/xpdf/chinese-simplified/ISO-2022-CN.unicodeMap
+unicodeMap      EUC-CN          /usr/local/share/xpdf/chinese-simplified/EUC-CN.unicodeMap
+unicodeMap      GBK             /usr/local/share/xpdf/chinese-simplified/GBK.unicodeMap
+cMapDir         Adobe-GB1       /usr/local/share/xpdf/chinese-simplified/CMap
+toUnicodeDir                    /usr/local/share/xpdf/chinese-simplified/CMap
+fontFileCC      Adobe-GB1       /usr/local/share/xpdf/chinese-simplified/CMap/gkai00mp.ttf
+#----- end Chinese Simplified support package
