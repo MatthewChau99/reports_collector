@@ -1,0 +1,7 @@
+cffi==1.14.1
+chardet==3.0.4
+cryptography==3.0
+pycparser==2.20
+pycryptodome==3.9.8
+six==1.15.0
+sortedcontainers==2.2.2
