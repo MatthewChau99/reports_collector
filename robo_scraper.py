@@ -8,29 +8,15 @@ from fake_useragent import UserAgent
 class ROBO:
     def __init__(self):
         self.s = requests.Session()
-        self.session_id = '445f4837-489e-4d02-9361-ec4aec16e1cc'
-        self.cloud_sso_token = 'C79EF2FE14F494F336864BAE48E0151B'
+        self.session_id = 'aa8f1d82-359a-4e8b-bd6f-283e23cdcc1b'
+        self.cloud_sso_token = '0FF8BCFFD1E7F2F04DB5CF3388626943'
         self.headers = {
             'accept': 'text/html, application/xhtml+xml, application/xml; q=0.9, image/webp, image/apng, */*; '
                       'q=0.8, application/signed-exchange; v=b3;q=0.9',
             'accept-encoding': 'gzip, deflate, br',
             'accept-language': 'en-US,en;q=0.9',
             'cache-control': 'max-age=0',
-            'cookie': '_ga=GA1.2.1531716279.1597394052; '
-                      '_gid=GA1.2.1588925542.1597394052; '
-                      'UM_distinctid=173ec1ae4b692d-02d0eb94d36ef9-31667304-13c680-173ec1ae4b750d; '
-                      'gr_user_id=1e7779f9-ff2e-4358-97d7-3959eb44cbc0; '
-                      'cloud-anonymous-token=8f8e8d705ee440598b70ab8651ea6c36; '
-                      'grwng_uid=be9587f5-9787-4409-bf6e-c733155c9a6d; '
-                      '_DA_pingback=d27b1587-1f27-4dd8-8b30-cbe4f4698326; '
-                      'cloud-sso-token=%s; '
-                      'ba895d61f7404b76_gr_last_sent_cs1=7662411ds40wmcloud.com; '
-                      'ba895d61f7404b76_gr_session_id=%s; '
-                      'ba895d61f7404b76_gr_last_sent_sid_with_cs1=%s; '
-                      'ba895d61f7404b76_gr_cs1=7662411ds40wmcloud.com; '
-                      '_gat=1; '
-                      'ba895d61f7404b76_gr_session_id_%s=true' % (
-                          self.cloud_sso_token, self.session_id, self.session_id, self.session_id),
+            'cookie': 'gr_user_id=3b78c2cc-f7c5-4e93-b257-4985ae40b0e2; _ga=GA1.2.1823514846.1597399956; UM_distinctid=173ec74fbac680-0d995333c12c96-31667304-13c680-173ec74fbad761; cloud-anonymous-token=1c24692788c54c34914cb93efa4fb687; grwng_uid=09544aa6-2eb5-49dc-bb6e-a9ba088eaac2; ba895d61f7404b76_gr_session_id=aa8f1d82-359a-4e8b-bd6f-283e23cdcc1b; _gid=GA1.2.21976762.1597680845; _gat=1; ba895d61f7404b76_gr_session_id_aa8f1d82-359a-4e8b-bd6f-283e23cdcc1b=true; cloud-sso-token=67985D9A5566BB9AC5953F254E08FE61',
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
             'sec-fetch-site': 'same-site',
@@ -55,7 +41,7 @@ class ROBO:
             'minPageCount': pdf_min_num_page
         }
         response = self.s.get(url=search_url, headers=headers, params=params).json()
-        # print(response)
+        print(response)
         json_list = response['data']['list']
         id_list = [doc['data']['id'] for doc in json_list]
         return id_list

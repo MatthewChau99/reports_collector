@@ -1,6 +1,6 @@
 {
     "doc_id": 2094093,
-    "download_url": "https://oss-buy.hufangde.com/report/2020/07/13/2094093.pdf?auth_key=1597555081-599b917df3a9487c9a1047b5cae508c7-0-2f9ee8596eb7cc1af5546c6149c6c3fe",
+    "download_url": "https://oss-buy.hufangde.com/report/2020/07/13/2094093.pdf?auth_key=1597680813-1012e85fdac54456b0d21a07bf38cf02-0-f96c2b3a5be14390da537914de750410",
     "org_name": "招股说明书",
     "page_num": 485,
     "score": 27.0,

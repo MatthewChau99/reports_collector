@@ -1,6 +1,6 @@
 {
     "doc_id": 2082171,
-    "download_url": "https://oss-buy.hufangde.com/report/2020/07/05/2082171.pdf?auth_key=1597555082-03794eba84a14f5daf7fd0083826c84b-0-944b10ccebdbc309cf8feb072de25b15",
+    "download_url": "https://oss-buy.hufangde.com/report/2020/07/05/2082171.pdf?auth_key=1597680816-e8fff47c0b99428c8516eec5b5d6b622-0-4f532c67611970106473af9796dd98cb",
     "org_name": "国盛证券",
     "page_num": 44,
     "score": 26.0,

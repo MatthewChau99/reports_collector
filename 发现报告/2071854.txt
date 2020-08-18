@@ -1,6 +1,6 @@
 {
     "doc_id": 2071854,
-    "download_url": "https://oss-buy.hufangde.com/report/2020/06/22/2071854.pdf?auth_key=1597555082-adb2a9d372744270847354d85dd31af5-0-0b00cc91044ca629c04cc4849a9da101",
+    "download_url": "https://oss-buy.hufangde.com/report/2020/06/22/2071854.pdf?auth_key=1597680813-e91e43e22cc34f3ba6b18e9229997fd9-0-ad8d6566107bdd79ce6d8ac632bfa741",
     "org_name": "国元证券",
     "page_num": 35,
     "score": 26.0,

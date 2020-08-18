@@ -1,6 +1,6 @@
 {
     "doc_id": 2108708,
-    "download_url": "https://oss-buy.hufangde.com/report/2020/08/03/2108708.pdf?auth_key=1597555083-a64b4de82e544f0fb77f135feca8c05f-0-e5245da403d22a059b026c1b80a57abb",
+    "download_url": "https://oss-buy.hufangde.com/report/2020/08/03/2108708.pdf?auth_key=1597680821-27c94644bfb7469cb7a73772278b4e57-0-6784259d4ed523b20f394853c426619e",
     "org_name": "光大证券",
     "page_num": 45,
     "score": 26.0,

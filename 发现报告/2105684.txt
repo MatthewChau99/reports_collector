@@ -1,6 +1,6 @@
 {
     "doc_id": 2105684,
-    "download_url": "https://oss-buy.hufangde.com/report/2020/07/29/2105684.pdf?auth_key=1597555081-b872150612de4ef48e8e622cf05636e5-0-717527cf7c199247976c5d465d35daf7",
+    "download_url": "https://oss-buy.hufangde.com/report/2020/07/29/2105684.pdf?auth_key=1597680813-d91d6ea468b34ef28dd56ff486246eaf-0-2eaa6dbedc013b6fb8e7bdac8e118e59",
     "org_name": "新时代证券",
     "page_num": 29,
     "score": 27.0,

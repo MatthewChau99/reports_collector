@@ -1,6 +1,6 @@
 {
     "doc_id": 2054318,
-    "download_url": "https://oss-buy.hufangde.com/report/2020/06/05/2054318.pdf?auth_key=1597555081-4755f1c682154737b5b74f91b5b12b79-0-4b44e385c1c0e03631e81081b27ac839",
+    "download_url": "https://oss-buy.hufangde.com/report/2020/06/05/2054318.pdf?auth_key=1597680813-272a0db4d5f247a99bfae963279fba36-0-ac26ed6bd66d42b2a759f0279460cae4",
     "org_name": "申万宏源",
     "page_num": 36,
     "score": 53.0,
