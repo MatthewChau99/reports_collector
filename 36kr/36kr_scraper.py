@@ -49,7 +49,7 @@ def textScrape(url, path, sum):
     title = title.replace('|', '')
     date = soup.find('span', {"class": "title-icon-item item-time"}).getText()[3:]
     article = soup.find('div', {"class": "article-content"})
-    if (prefilter(date)):
+    if prefilter(date):
         with open("temp.html", "w", encoding='utf-8') as file:
             file.write(str(article))
         file.close()
@@ -89,4 +89,5 @@ def main():
     urlParser(search, path, sum)
 
 
-main()
+if __name__ == '__main__':
+    main()
