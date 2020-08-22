@@ -1,0 +1,8 @@
+{
+    "doc_id": 3705203,
+    "date": "2019-04-11T00:00:00.000+0800",
+    "org_name": "方正证券",
+    "page_num": 158,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/ybk/da852a02874553fb2e34921b347a7ab0.pdf"
+}

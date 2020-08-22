@@ -1,0 +1,8 @@
+{
+    "doc_id": 4259099,
+    "date": "2020-06-09T00:00:00.000+0800",
+    "org_name": "中信证券",
+    "page_num": 168,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/cc/9f82a7b99295220bc7abc2b241a57a96.pdf"
+}

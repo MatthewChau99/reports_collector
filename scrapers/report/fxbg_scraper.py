@@ -132,6 +132,10 @@ class FXBG:
             os.mkdir('cache/发现报告')
         current_path = 'cache/发现报告'
 
+        if search_keyword not in os.listdir(current_path):
+            os.mkdir(os.path.join(current_path, search_keyword))
+        current_path = os.path.join(current_path, search_keyword)
+
         pdf_count = 0
         num_keyword = 30
 
@@ -146,9 +150,9 @@ class FXBG:
             with open(pdf_save_path, 'wb') as f:
                 f.write(content)
 
-            content_text = xpdf.to_text(pdf_save_path)[0]
+            # content_text = xpdf.to_text(pdf_save_path)[0]
             doc_info = url_list[pdf_id]
-            doc_info.update({'content': content_text})
+            # doc_info.update({'content': content_text})
             txt_save_path = os.path.join(current_path, str(pdf_id) + '.txt')
 
             with open(txt_save_path, 'w', encoding='utf-8') as f:

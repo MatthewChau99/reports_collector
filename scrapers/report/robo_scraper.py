@@ -12,7 +12,7 @@ class ROBO:
     def __init__(self):
         self.s = requests.Session()
         # self.cookie = browser_cookie3.chrome(domain_name='robo.datayes.com')
-        self.cookie = 'ggr_user_id=3b78c2cc-f7c5-4e93-b257-4985ae40b0e2; _ga=GA1.2.1823514846.1597399956; UM_distinctid=173ec74fbac680-0d995333c12c96-31667304-13c680-173ec74fbad761; _DA_pingback=af906782-96cb-4775-8f43-5e9c2cf3ad34; cloud-anonymous-token=1c24692788c54c34914cb93efa4fb687; grwng_uid=09544aa6-2eb5-49dc-bb6e-a9ba088eaac2; ba895d61f7404b76_gr_last_sent_cs1=7662411%40wmcloud.com; ba895d61f7404b76_gr_session_id=ec0c457b-461c-430e-a81e-4e093aa01fde; ba895d61f7404b76_gr_last_sent_sid_with_cs1=ec0c457b-461c-430e-a81e-4e093aa01fde; ba895d61f7404b76_gr_session_id_ec0c457b-461c-430e-a81e-4e093aa01fde=true; _gid=GA1.2.1792481964.1598080054; _gat=1; CNZZDATA1257961942=978492369-1597397288-%7C1598076005; cloud-sso-token=C8CF29B09ECEB4ABFBF8C2B30698D5A2; ba895d61f7404b76_gr_cs1=7662411%40wmcloud.com'
+        self.cookie = 'gr_user_id=3b78c2cc-f7c5-4e93-b257-4985ae40b0e2; _ga=GA1.2.1823514846.1597399956; UM_distinctid=173ec74fbac680-0d995333c12c96-31667304-13c680-173ec74fbad761; _DA_pingback=af906782-96cb-4775-8f43-5e9c2cf3ad34; cloud-anonymous-token=1c24692788c54c34914cb93efa4fb687; grwng_uid=09544aa6-2eb5-49dc-bb6e-a9ba088eaac2; ba895d61f7404b76_gr_last_sent_cs1=7662411%40wmcloud.com; _gid=GA1.2.1792481964.1598080054; cloud-sso-token=C8CF29B09ECEB4ABFBF8C2B30698D5A2; CNZZDATA1257961942=978492369-1597397288-%7C1598092239; ba895d61f7404b76_gr_cs1=7662411%40wmcloud.com'
         self.headers = {
             'accept': 'text/html, application/xhtml+xml, application/xml; q=0.9, image/webp, image/apng, */*; '
                       'q=0.8, application/signed-exchange; v=b3;q=0.9',
@@ -68,7 +68,7 @@ class ROBO:
 
         return updated_json
 
-    def download_pdf(self, doc_id_list: dict):
+    def download_pdf(self, search_keyword: str, doc_id_list: dict):
         url_list = self.update_json(doc_id_list)
 
         pdf_count = 0
@@ -78,6 +78,10 @@ class ROBO:
         if '萝卜投研' not in os.listdir('cache'):
             os.mkdir('cache/萝卜投研')
         current_path = 'cache/萝卜投研'
+
+        if search_keyword not in os.listdir(current_path):
+            os.mkdir(os.path.join(current_path, search_keyword))
+        current_path = os.path.join(current_path, search_keyword)
 
         for pdf_id in url_list:
             content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
@@ -93,9 +97,9 @@ class ROBO:
                 with open(pdf_save_path, 'wb') as f:
                     f.write(content)
 
-                content_text = xpdf.to_text(pdf_save_path)[0]
+                # content_text = xpdf.to_text(pdf_save_path)[0]
                 doc_info = url_list[pdf_id]
-                doc_info.update({'content': content_text})
+                # doc_info.update({'content': content_text})
 
                 with open(txt_save_path, 'w', encoding='utf-8') as f:
                     json.dump(doc_info, f, ensure_ascii=False, indent=4)
@@ -115,7 +119,7 @@ class ROBO:
     def run(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
         print('--------Begin searching pdfs from 萝卜投研--------')
         pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
-        self.download_pdf(pdf_id_list)
+        self.download_pdf(search_keyword, pdf_id_list)
 
 
 def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
