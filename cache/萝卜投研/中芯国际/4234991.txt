@@ -1,0 +1,8 @@
+{
+    "doc_id": 4234991,
+    "date": "2020-05-07T00:00:00.000+0800",
+    "org_name": "国盛证券",
+    "page_num": 181,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/cc/2a867bce9db596dbea55168ed4e8ca45.pdf"
+}

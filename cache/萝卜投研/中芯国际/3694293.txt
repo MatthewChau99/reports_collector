@@ -1,0 +1,8 @@
+{
+    "doc_id": 3694293,
+    "date": "2019-03-31T00:00:00.000+0800",
+    "org_name": "华泰证券",
+    "page_num": 167,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/shift/4b86f5f3ee59046075e4e624a3a8789d.pdf"
+}

@@ -1,0 +1,8 @@
+{
+    "doc_id": 4238728,
+    "date": "2020-05-11T00:00:00.000+0800",
+    "org_name": "华泰证券",
+    "page_num": 204,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/cc/67d582cb84d1785ae7bc0ddcba0eddf1.pdf"
+}

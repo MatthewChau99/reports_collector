@@ -1,0 +1,8 @@
+{
+    "doc_id": 4186630,
+    "date": "2020-03-12T00:00:00.000+0800",
+    "org_name": "兴业证券",
+    "page_num": 154,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/cc/cc5b9bb46ae5fd76acdaf859c047808a.pdf"
+}

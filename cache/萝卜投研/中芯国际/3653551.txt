@@ -1,0 +1,8 @@
+{
+    "doc_id": 3653551,
+    "date": "2019-02-19T00:00:00.000+0800",
+    "org_name": "西南证券",
+    "page_num": 182,
+    "doc_type": "EXTERNAL_REPORT",
+    "download_url": "https://bigdata-s3.wmcloud.com/researchreport/shift/342b7716c3e0e8f54a397088a0b03c7a.pdf"
+}
