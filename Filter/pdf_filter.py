@@ -56,6 +56,7 @@ def pdf_filter(dir):
 
                 # Company name count
                 if attributes['keywordCount'][company_name] <= company_name_threshold:
+                    print('Not enough keywords')
                     raise ValueError
 
                 with open(doc_id + '.json', 'w', encoding='utf-8') as file:
