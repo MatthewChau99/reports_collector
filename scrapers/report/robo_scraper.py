@@ -1,18 +1,16 @@
-import os
 import datetime
-import pprint as pp
+import json
+import os
+
 import requests
 from fake_useragent import UserAgent
-from xpdf_python import wrapper as xpdf
-import json
-import browser_cookie3
 
 
 class ROBO:
     def __init__(self):
         self.s = requests.Session()
         # self.cookie = browser_cookie3.chrome(domain_name='robo.datayes.com')
-        self.cookie = 'gr_user_id=3b78c2cc-f7c5-4e93-b257-4985ae40b0e2; _ga=GA1.2.1823514846.1597399956; UM_distinctid=173ec74fbac680-0d995333c12c96-31667304-13c680-173ec74fbad761; _DA_pingback=af906782-96cb-4775-8f43-5e9c2cf3ad34; cloud-anonymous-token=1c24692788c54c34914cb93efa4fb687; grwng_uid=09544aa6-2eb5-49dc-bb6e-a9ba088eaac2; ba895d61f7404b76_gr_last_sent_cs1=7662411%40wmcloud.com; _gid=GA1.2.1792481964.1598080054; cloud-sso-token=C8CF29B09ECEB4ABFBF8C2B30698D5A2; CNZZDATA1257961942=978492369-1597397288-%7C1598092239; ba895d61f7404b76_gr_cs1=7662411%40wmcloud.com'
+        self.cookie = 'gr_user_id=3b78c2cc-f7c5-4e93-b257-4985ae40b0e2; _ga=GA1.2.1823514846.1597399956; UM_distinctid=173ec74fbac680-0d995333c12c96-31667304-13c680-173ec74fbad761; _DA_pingback=af906782-96cb-4775-8f43-5e9c2cf3ad34; cloud-anonymous-token=1c24692788c54c34914cb93efa4fb687; grwng_uid=09544aa6-2eb5-49dc-bb6e-a9ba088eaac2; ba895d61f7404b76_gr_last_sent_cs1=7662411%40wmcloud.com; CNZZDATA1257961942=978492369-1597397288-%7C1598453451; cloud-sso-token=E0B9973F7B933538530C7C9E95DBBF01; ba895d61f7404b76_gr_cs1=7662411%40wmcloud.com'
         self.headers = {
             'accept': 'text/html, application/xhtml+xml, application/xml; q=0.9, image/webp, image/apng, */*; '
                       'q=0.8, application/signed-exchange; v=b3;q=0.9',
@@ -55,14 +53,20 @@ class ROBO:
         updated_json = {}
 
         for id in id_list:
-            download_url = self.s.get(url=download_api_url + str(id), headers=self.headers).json()['data']['downloadUrl']
-            updated_dict = {}
-            updated_dict.update({'doc_id': id})
-            updated_dict.update({'date': id_list[id]['data']['publishTime']})
-            updated_dict.update({'org_name': id_list[id]['data']['orgName']})
-            updated_dict.update({'page_num': id_list[id]['data']['pageCount']})
-            updated_dict.update({'doc_type': id_list[id]['type']})
-            updated_dict.update({'download_url': download_url})
+            download_url = self.s.get(url=download_api_url + str(id), headers=self.headers).json()['data'][
+                'downloadUrl']
+
+            date = id_list[id]['data']['publishTime']
+            date = date[0:4] + date[5:7] + date[8:10]
+
+            updated_dict = {'source': 'robo',
+                            'doc_id': id,
+                            'date': date,
+                            'org_name': id_list[id]['data']['orgName'],
+                            'page_num': id_list[id]['data']['pageCount'],
+                            'doc_type': id_list[id]['type'],
+                            'download_url': download_url,
+                            'title': id_list[id]['data']['title']}
 
             updated_json.update({id: updated_dict})
 
@@ -75,9 +79,12 @@ class ROBO:
 
         os.chdir('/Users/admin/Desktop/资料库Startup')
 
-        if '萝卜投研' not in os.listdir('cache'):
-            os.mkdir('cache/萝卜投研')
-        current_path = 'cache/萝卜投研'
+        if 'report' not in os.listdir('cache'):
+            os.mkdir('cache/report')
+        if '萝卜投研' not in os.listdir('cache/report'):
+            os.mkdir('cache/report/萝卜投研')
+
+        current_path = 'cache/report/萝卜投研'
 
         if search_keyword not in os.listdir(current_path):
             os.mkdir(os.path.join(current_path, search_keyword))
@@ -89,7 +96,7 @@ class ROBO:
             content = content.content
 
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
-            txt_save_path = os.path.join(current_path, str(pdf_id) + '.txt')
+            txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
 
             try:
                 print('saving pdf with id: %s' % pdf_id)

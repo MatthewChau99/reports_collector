@@ -39,9 +39,10 @@ def urlParser(search, path, sum, num_years):
 def prefilter(date, num_years):
     ret = True
     dateToday = datetime.now().strftime("%Y")
-    years = int(dateToday) - int(date[0:4])
-    if date[0] == '2' and years > num_years:
-        ret = False
+    if date[0:3].isalnum():
+        years = int(dateToday) - int(date[0:4])
+        if years > num_years:
+            ret = False
     return ret
 
 
@@ -105,9 +106,11 @@ def run(search_keyword, num_years):
     print('--------Begin searching articles from 36kr--------')
     os.chdir('/Users/admin/Desktop/资料库Startup')
 
-    if '36kr' not in os.listdir('cache'):
-        os.mkdir('cache/36kr')
-    path = 'cache/36kr'
+    if 'news' not in os.listdir('cache'):
+        os.mkdir('cache/news')
+    if '36kr' not in os.listdir('cache/news'):
+        os.mkdir('cache/news/36kr')
+    path = 'cache/news/36kr'
 
     if search_keyword not in os.listdir(path):
         os.mkdir(os.path.join(path, search_keyword))
