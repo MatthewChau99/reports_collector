@@ -5,11 +5,6 @@ import os
 import pdfkit
 
 
-def pdf_to_text(pdf_path):
-    text = xpdf.to_text(pdf_path)
-    return text
-
-
 class Filter:
     def __init__(self):
         """
@@ -27,6 +22,10 @@ class Filter:
             counter.update({keyword: count})
 
         return counter
+
+    def pdf_to_text(self, pdf_path):
+        text = xpdf.to_text(pdf_path)
+        return text
 
     def html_to_pdf(self, directory):
         """
@@ -58,7 +57,7 @@ class Filter:
                 os.remove(filename)
         os.chdir(curr_dir)
 
-    def pdf_filter(self, directory):
+    def pdf_process(self, directory):
         """
         Data processing for data collected from websites that allow pdf download
         :param directory: the directory that contains the .pdf and .json files
@@ -74,10 +73,9 @@ class Filter:
 
                 print('Processing file with id %s' % doc_id)
 
-
                 try:
                     # Getting text from pdf
-                    text = pdf_to_text(filename)[0]
+                    text = self.pdf_to_text(filename)[0]
 
                     # Add company name to keyword
                     company_name = os.path.basename(os.getcwd())
@@ -93,6 +91,7 @@ class Filter:
                         if 'content' in attributes.keys() or 'keywordCount' in attributes.keys():
                             continue
 
+                        # Update json file
                         attributes.update({'content': text,
                                            'keywordCount': keywords_count})
                         file.close()
@@ -116,14 +115,21 @@ class Filter:
         os.chdir(curr_dir)
 
     def run_filter(self, file_type: str):
+        """
+        For news: html --> pdf --> process pdf --> update json
+        For reports: pdf --> process pdf --> update json
+        :param file_type: can either be 'news' or 'report'
+        """
         content_dir = 'cache/news' if file_type == 'news' else 'cache/report'
         for source_name in os.listdir(content_dir):
+            # source_name: 发现报告/萝卜投研……
             print('======== Processing files from %s ========' % source_name)
             for keyword_name in os.listdir(os.path.join(content_dir, source_name)):
+                # keyword_name: 中芯国际/可口可乐……
                 curr_dir = os.path.join(content_dir, source_name, keyword_name)
                 if file_type == 'news':
                     self.html_to_pdf(curr_dir)
-                self.pdf_filter(curr_dir)
+                self.pdf_process(curr_dir)
 
 
 def run_both_filters():
