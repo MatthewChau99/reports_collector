@@ -12,14 +12,71 @@ class Filter:
         either pdf -> text for pdf files
         or html -> pdf -> text for html files
         """
-        self.keyword_list = ['市场', '股份', '国际', '芯片']
+        self.tags = {'历史沿革': ({'历史沿革', '历史事件', '发展历程'}, 3),
+                     '组织架构': ({'组织架构'}, 3),
+                     '股权架构': ({'股权架构', '股权变动', '股权结构', '股东', '股权'}, 3),
+                     '管理团队': ({'管理团队', '董事会', '管理人'}, 3),
+                     '薪酬体系': ({'薪酬体系'}, 3),
+                     '奖励机制': ({'奖励机制'}, 3),
+                     '产品': ({'业务', '服务', '产品'}, 3),
+                     '生产情况': ({'生产情况', '生产流程', '生产工艺', '产能'}, 3),
+                     '销售情况': ({'销售', '市场需求', '渠道'}, 3),
+                     '知识产权': ({'知识产权', '商标', '专利'}, 3),
+                     '核心技术': ({'核心技术', '核心竞争力', '壁垒'}, 3),
+                     '研发事项': ({'研发', '迭代'}, 3),
+                     '客户': ({'客户', '用户', '合作', '伙伴'}, 3),
+                     '市场需求': ({'市场需求'}, 3),
+                     '竞争对象': ({'对手', '竞争格局', '竞争态势', '头部', '竞品'}, 3),
+                     '供应商': ({'供应', '采购'}, 3),
+                     '市场占有率': ({'市场占有率', '市场份额', '市场竞争力'}, 3),
+                     '运营情况': ({'收入', '营收', '成本', '债务'}, 3),
+                     '商业模式': ({'商业模式', '经营模式', '理念', '业务模型', '盈利模式', '增长点', '商业布局'}, 3),
+                     '发展战略': ({'战略', '发展目标', '策略', '规划', '未来', '投资', '融资'}, 3)
+                     }
+        self.keyword_list = {'历史沿革': '历史沿革', '历史事件': '历史沿革', '发展历程': '历史沿革',
+                             '组织架构': '组织架构',
+                             '股权架构': '股权架构', '股权变动': '股权架构', '股权结构': '股权架构', '股东': '股权架构', '股权': '股权架构',
+                             '管理团队': '管理团队', '董事会': '管理团队', '管理人': '管理团队',
+                             '薪酬体系': '薪酬体系',
+                             '奖励机制': '奖励机制',
+                             '业务': '产品', '服务': '产品', '产品': '产品',
+                             '生产情况': '生产情况', '生产流程': '生产情况', '生产工艺': '生产情况', '产能': '生产情况',
+                             '销售': '销售情况', '市场需求': '销售情况', '渠道': '销售情况',
+                             '知识产权': '知识产权', '商标': '知识产权', '专利': '知识产权',
+                             '核心技术': '核心技术', '核心竞争力': '核心技术', '壁垒': '壁垒',
+                             '研发': '研发事项', '迭代': '研发事项',
+                             '客户': '客户', '用户': '客户', '合作': '客户', '伙伴': '客户',
+                             '对手': '竞争对象', '竞争格局': '竞争对象', '竞争态势': '竞争对象', '头部': '竞争对象', '竞品': '竞争对象',
+                             '供应': '供应商', '采购': '供应商',
+                             '市场占有率': '市场占有率', '市场份额': '市场占有率', '市场竞争力': '市场占有率',
+                             '收入': '运营情况', '营收': '运营情况', '成本': '运营情况', '债务': '运营情况',
+                             '商业模式': '商业模式', '经营模式': '商业模式', '理念': '商业模式', '业务模型': '商业模式', '盈利模式': '商业模式',
+                             '增长点': '商业模式', '商业布局': '商业模式',
+                             '战略': '发展战略', '发展目标': '发展战略', '策略': '发展战略', '规划': '发展战略', '未来': '发展战略', '投资': '发展战略',
+                             '融资': '发展战略'
+                             }
 
     def count_keywords(self, text: str) -> dict:
+        """
+        Count the number of occurrences of each keyword in self.keyword_list in text
+        :param text: string version of pdf
+        :return: a {keyword:count} dictionary
+        """
         counter = {}
 
         for keyword in self.keyword_list:
             count = text.count(keyword)
             counter.update({keyword: count})
+
+        return counter
+
+    def count_tags(self, keyword_counter: dict):
+        counter = {}
+
+        for tag in self.tags:
+            count = sum([keyword_counter[keyword] for keyword in self.tags[tag][0]])
+            if count >= self.tags[tag][1]:
+                counter.update({tag: count})
 
         return counter
 
@@ -79,10 +136,18 @@ class Filter:
 
                     # Add company name to keyword
                     company_name = os.path.basename(os.getcwd())
-                    self.keyword_list.append(company_name)
+                    self.keyword_list.update({company_name: '公司名称'})
 
                     # Adding attributes to txt
                     keywords_count = self.count_keywords(text)
+
+                    # Company name count
+                    if keywords_count[company_name] <= company_name_threshold:
+                        print('File %s deleted due to not enough keyword occurrences' % doc_id)
+                        raise ValueError
+
+                    # Adding tags to txt
+                    tags_count = self.count_tags(keywords_count)
 
                     with open(json_filename, 'r', encoding='utf-8') as file:
                         attributes = json.load(file)
@@ -93,13 +158,9 @@ class Filter:
 
                         # Update json file
                         attributes.update({'content': text,
-                                           'keywordCount': keywords_count})
+                                           'keywordCount': keywords_count,
+                                           'tags': tags_count})
                         file.close()
-
-                    # Company name count
-                    if attributes['keywordCount'][company_name] <= company_name_threshold:
-                        print('File %s deleted due to not enough keyword occurrences' % doc_id)
-                        raise ValueError
 
                     with open(doc_id + '.json', 'w', encoding='utf-8') as file:
                         json.dump(attributes, file, ensure_ascii=False, indent=4)
