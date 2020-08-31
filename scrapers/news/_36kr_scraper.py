@@ -39,9 +39,10 @@ def urlParser(search, path, sum, num_years):
 def prefilter(date, num_years):
     ret = True
     dateToday = datetime.now().strftime("%Y")
-    years = int(dateToday) - int(date[0:4])
-    if date[0] == '2' and years > num_years:
-        ret = False
+    if date[0:3].isnumeric():
+        years = int(dateToday) - int(date[0:4])
+        if years > num_years:
+            ret = False
     return ret
 
 
@@ -64,10 +65,15 @@ def textScrape(url, path, sum, num_years):
     article = soup.find('div', {"class": "article-content"})
 
     if prefilter(date, num_years):
-        with open("temp.html", "w", encoding='utf-8') as file:
-            file.write(str(article))
-        file.close()
+        json_save_path = os.path.join(path, str(id) + '.json')
+        pdf_save_path = os.path.join(path, str(id) + '.pdf')
+        html_save_path = os.path.join(path, str(id) + '.html')
 
+        with open(html_save_path, "w", encoding='utf-8') as file:
+            file.write(str(article))
+        # file.close()
+
+        # Saving doc attributes
         doc_info = {
             'doc_id': id,
             'title': title,
@@ -75,23 +81,10 @@ def textScrape(url, path, sum, num_years):
             'org_name': author,
             'doc_type': 'NEWS'
         }
-        txt_save_path = os.path.join(path, str(id) + '.txt')
-        pdf_save_path = os.path.join(path, str(id) + '.pdf')
 
-        with open(txt_save_path, 'w', encoding='utf-8') as f:
+        with open(json_save_path, 'w', encoding='utf-8') as f:
             json.dump(doc_info, f, ensure_ascii=False, indent=4)
 
-        options = {
-            'quiet': '',
-            'page-size': 'Letter',
-            'margin-top': '0.75in',
-            'margin-right': '0.75in',
-            'margin-bottom': '0.75in',
-            'margin-left': '0.75in',
-            'encoding': "UTF-8",
-            'no-outline': None
-        }
-        pdfkit.from_file("temp.html", pdf_save_path, options=options)
         # shutil.move("article.pdf", folderPath)
 
         sum.write(title + "\n")
@@ -105,9 +98,11 @@ def run(search_keyword, num_years):
     print('--------Begin searching articles from 36kr--------')
     os.chdir('/Users/admin/Desktop/资料库Startup')
 
-    if '36kr' not in os.listdir('cache'):
-        os.mkdir('cache/36kr')
-    path = 'cache/36kr'
+    if 'news' not in os.listdir('cache'):
+        os.mkdir('cache/news')
+    if '36kr' not in os.listdir('cache/news'):
+        os.mkdir('cache/news/36kr')
+    path = 'cache/news/36kr'
 
     if search_keyword not in os.listdir(path):
         os.mkdir(os.path.join(path, search_keyword))

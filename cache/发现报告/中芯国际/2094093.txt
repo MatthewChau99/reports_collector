@@ -1,9 +1,0 @@
-{
-    "doc_id": 2094093,
-    "date": "20200713",
-    "download_url": "https://oss-buy.hufangde.com/report/2020/07/13/2094093.pdf?auth_key=1598111712-da741a8ae3ba428cbc83547b65cf85b8-0-75854f9bad98f0617281ad81668c5721",
-    "org_name": "招股说明书",
-    "page_num": 485,
-    "score": 36.0,
-    "title": "中芯国际：首次公开发行股票并在科创板上市招股说明书"
-}

@@ -1,15 +1,10 @@
+import datetime
 import json
 import os
-import random
 from typing import Optional
-import datetime
-import shutil
-import pprint as pp
-import time
 
 import requests
 from fake_useragent import UserAgent
-from xpdf_python import wrapper as xpdf
 
 # User ID does not change for a fixed account
 # User Token changes for each individual login
@@ -107,17 +102,20 @@ class FXBG:
             # time_interval = random.randint(5, 8)
             # time.sleep(time_interval)
             doc = doc_list[doc_id]
-            # print(doc)
-            updated_doc = {}
-            updated_doc.update({'doc_id': doc_id})
-            updated_doc.update({'date': ''.join([doc['pdfPath'][7:11], doc['pdfPath'][12:14], doc['pdfPath'][15:17]])})
-            updated_doc.update({'download_url': 'https://oss-buy.hufangde.com' + response['data']})
-            updated_doc.update({'org_name': doc['orgName']})
-            updated_doc.update({'page_num': doc['pageNum']})
-            updated_doc.update({'score': doc['score']})
             title = str(doc['title']).replace('<em>', '').replace('</em>', '')
-            updated_doc.update({'title': title})
+
+            updated_doc = {'source': 'fxbg',
+                           'doc_id': doc_id,
+                           'date': ''.join([doc['pdfPath'][7:11], doc['pdfPath'][12:14], doc['pdfPath'][15:17]]),
+                           'download_url': 'https://oss-buy.hufangde.com' + response['data'],
+                           'org_name': doc['orgName'],
+                           'page_num': doc['pageNum'],
+                           # 'score': doc['score'],
+                           'doc_type': 'EXTERNAL_REPORT',
+                           'title': title}
+
             doc_list.update({doc_id: updated_doc})
+
         print('--------Found %s pdfs in 发现报告--------' % len(doc_list))
         return doc_list
 
@@ -128,16 +126,19 @@ class FXBG:
         :param url_list: 所有所需要下载的pdf文件的下载链接
         """
         os.chdir('/Users/admin/Desktop/资料库Startup')
-        if '发现报告' not in os.listdir('cache'):
-            os.mkdir('cache/发现报告')
-        current_path = 'cache/发现报告'
+        if 'report' not in os.listdir('cache'):
+            os.mkdir('cache/report')
+
+        if '发现报告' not in os.listdir('cache/report'):
+            os.mkdir('cache/report/发现报告')
+
+        current_path = 'cache/report/发现报告'
 
         if search_keyword not in os.listdir(current_path):
             os.mkdir(os.path.join(current_path, search_keyword))
         current_path = os.path.join(current_path, search_keyword)
 
         pdf_count = 0
-        num_keyword = 30
 
         for pdf_id in url_list:
             content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
@@ -153,38 +154,12 @@ class FXBG:
             # content_text = xpdf.to_text(pdf_save_path)[0]
             doc_info = url_list[pdf_id]
             # doc_info.update({'content': content_text})
-            txt_save_path = os.path.join(current_path, str(pdf_id) + '.txt')
+            txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
 
             with open(txt_save_path, 'w', encoding='utf-8') as f:
                 json.dump(doc_info, f, ensure_ascii=False, indent=4)
 
-            # Temporary filtering, can be deleted later for modularization
-
-            # Save cache pdf
-            # cache_path = 'cache'
-            # cache_save_path = os.path.join(cache_path, str(pdf_id) + '.pdf')
-            #
-            # with open(cache_save_path, 'wb') as f:
-            #     f.write(content)
-            # content_text = xpdf.to_text(cache_save_path)[0]
-            # keyword_count = content_text.count(search_keyword)
-            # save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
-            #
-            # if keyword_count >= num_keyword:
-            #     shutil.move(cache_save_path, save_path)
-            #     print('downloading pdf with id: %d' % pdf_id)
-            #
-            #     # Saving doc info
-            #     doc_info = url_list[pdf_id]
-            #     doc_info.update({'content': content_text})
-            #     txt_save_path = os.path.join(current_path, str(pdf_id) + '.txt')
-            #
-            #     with open(txt_save_path, 'w', encoding='utf-8') as f:
-            #         json.dump(doc_info, f, ensure_ascii=False, indent=4)
             pdf_count += 1
-            #
-            # else:
-            #     os.remove(cache_save_path)
 
         print('--------Finished downloading %d pdfs from 发现报告--------' % pdf_count)
 
