@@ -114,7 +114,7 @@ def run(search_keyword, num_years):
         sum = open(os.path.join(path, "summary" + ".txt"), "a", encoding='utf-8')
     else:
         sum = open(os.path.join(path, "summary" + ".txt"), "w", encoding='utf-8')
-    urlParser(search_keyword, path, sum, num_years)
+    urlParser(search_keyword, path, num_years)
 
 
 if __name__ == '__main__':
