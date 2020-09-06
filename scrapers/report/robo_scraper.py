@@ -2,15 +2,26 @@ import datetime
 import json
 import os
 
+import browser_cookie3
+from utils.get_cookies import get_cookies
 import requests
 from fake_useragent import UserAgent
+import pprint as pp
 
 
 class ROBO:
     def __init__(self):
+        sso = ''
+
+        # Prevents the case where cookies does not contain cloud sso token; loops until we have sso
+        while sso == '':
+            cookies = get_cookies('https://robo.datayes.com')
+            for cookie in cookies:
+                if cookie['name'] == 'cloud-sso-token':
+                    sso = cookie['value']
+
         self.s = requests.Session()
-        # self.cookie = browser_cookie3.chrome(domain_name='robo.datayes.com')
-        self.cookie = 'gr_user_id=e097b71f-2765-486a-b4f4-acf7cc4d8140; ba895d61f7404b76_gr_session_id=2bd11f04-74b6-42ce-bb8b-a049cbdac411; UM_distinctid=1744493d767f4-00bbf701952605-31677304-13c680-1744493d768d62; ba895d61f7404b76_gr_session_id_2bd11f04-74b6-42ce-bb8b-a049cbdac411=true; grwng_uid=23298924-e484-4fd4-80d6-33f8b8e749b3; cloud-sso-token=C6A7E1424B0039B433E3EB03E1184993; cloud-anonymous-token=13e68f6f127e4580a01069d918f3daf7; _ga=GA1.2.72455160.1598878374; _gid=GA1.2.162239657.1598878374; _gat=1'
+        self.cookie = 'cloud-sso-token=%s; ' % sso
         self.headers = {
             'accept': 'text/html, application/xhtml+xml, application/xml; q=0.9, image/webp, image/apng, */*; '
                       'q=0.8, application/signed-exchange; v=b3;q=0.9',
@@ -45,6 +56,7 @@ class ROBO:
         json_list = response['data']['list']
         # pp.pprint(json_list)
         id_list = {doc['data']['id']: doc for doc in json_list}
+
         print('--------Found %d pdfs in 萝卜投研--------' % len(id_list))
         return id_list
 
@@ -104,9 +116,7 @@ class ROBO:
                 with open(pdf_save_path, 'wb') as f:
                     f.write(content)
 
-                # content_text = xpdf.to_text(pdf_save_path)[0]
                 doc_info = url_list[pdf_id]
-                # doc_info.update({'content': content_text})
 
                 with open(txt_save_path, 'w', encoding='utf-8') as f:
                     json.dump(doc_info, f, ensure_ascii=False, indent=4)
@@ -131,7 +141,8 @@ class ROBO:
 
 def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
     robo_scraper = ROBO()
-    robo_scraper.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
+    robo_scraper.run(search_keyword=search_keyword, filter_keyword=filter_keyword,
+                     pdf_min_num_page=pdf_min_num_page,
                      num_years=num_years)
 
 

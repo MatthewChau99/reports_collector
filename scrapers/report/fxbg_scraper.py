@@ -5,6 +5,7 @@ from typing import Optional
 
 import requests
 from fake_useragent import UserAgent
+from definitions import ROOT_DIR
 
 # User ID does not change for a fixed account
 # User Token changes for each individual login
