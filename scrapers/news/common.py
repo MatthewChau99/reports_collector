@@ -12,10 +12,9 @@ def nameCleaner(string):
             string = string.replace(elem, '')
     return  string
 
-def save(article,path,title, author, date,sum, id, num_years):
+def save(article,path,title, author, date, id, num_years):
     json_save_path = os.path.join(path, str(id) + '.json')
     html_save_path = os.path.join(path, str(id) + '.html')
-    text_save_path = os.path.join(path, str(id) + '.txt')
 
     if(not os.path.exists(json_save_path)):
          if(prefilter(date, num_years)):

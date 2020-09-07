@@ -12,7 +12,7 @@ import shutil
 now = datetime.now()
 
 
-def urlParser(search, path, sum, num_years):
+def urlParser(search, path, num_years):
     url = "https://36kr.com/search/articles/" + search + "?sort=score"
 
     res = requests.get(url)  # init page
@@ -46,7 +46,7 @@ def prefilter(date, num_years):
     return ret
 
 
-def textScrape(url, path, sum, num_years):
+def textScrape(url, path, num_years):
     url = url
     res = requests.get(url)
     html_page = res.content
