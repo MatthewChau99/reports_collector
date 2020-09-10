@@ -9,5 +9,4 @@ def get_cookies(url):
     driver.get(url)
     cookies = driver.get_cookies()
     driver.close()
-    pp.pprint(cookies)
     return cookies

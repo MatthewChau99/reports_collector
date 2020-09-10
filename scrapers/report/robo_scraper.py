@@ -2,10 +2,11 @@ import datetime
 import json
 import os
 
-import browser_cookie3
+from definitions import ROOT_DIR
 from utils.get_cookies import get_cookies
 import requests
 from fake_useragent import UserAgent
+from utils import blacklist
 import pprint as pp
 
 
@@ -36,15 +37,21 @@ class ROBO:
             'upgrade-insecure-requests': '1',
             'user-agent': str(UserAgent().random)
         }
+        self.source = 'robo'
+        self.blacklist = None
 
     def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> dict:
+        # Create blacklist
+        self.blacklist = blacklist.Blacklist(search_keyword)
+        blacklist_exist = self.blacklist.blacklist_exist()
+
         search_url = 'https://gw.datayes.com/rrp_adventure/web/search'
         headers = self.headers.copy()
         curr_year = datetime.datetime.today().year
         start_year = curr_year - num_years
         params = {
             'type': 'EXTERNAL_REPORT',
-            'pageSize': 1000,
+            'pageSize': 50,
             'pageNow': '1',
             'sortOrder': 'desc',
             'query': search_keyword,
@@ -54,8 +61,10 @@ class ROBO:
         }
         response = self.s.get(url=search_url, headers=headers, params=params).json()
         json_list = response['data']['list']
-        # pp.pprint(json_list)
         id_list = {doc['data']['id']: doc for doc in json_list}
+
+        if blacklist_exist:
+            self.blacklist.blacklist_filter(id_list, self.source)
 
         print('--------Found %d pdfs in 萝卜投研--------' % len(id_list))
         return id_list
@@ -71,7 +80,7 @@ class ROBO:
             date = id_list[id]['data']['publishTime']
             date = date[0:4] + date[5:7] + date[8:10]
 
-            updated_dict = {'source': 'robo',
+            updated_dict = {'source': self.source,
                             'doc_id': id,
                             'date': date,
                             'org_name': id_list[id]['data']['orgName'],
@@ -89,18 +98,19 @@ class ROBO:
 
         pdf_count = 0
 
-        os.chdir('/Users/admin/Desktop/资料库Startup')
+        os.chdir(ROOT_DIR)
+        keyword_dir = os.path.join('cache', search_keyword)
 
-        if 'report' not in os.listdir('cache'):
-            os.mkdir('cache/report')
-        if '萝卜投研' not in os.listdir('cache/report'):
-            os.mkdir('cache/report/萝卜投研')
+        if search_keyword not in os.listdir('cache'):
+            os.mkdir(keyword_dir)
 
-        current_path = 'cache/report/萝卜投研'
+        if 'report' not in os.listdir(keyword_dir):
+            os.mkdir(os.path.join(keyword_dir, 'report'))
 
-        if search_keyword not in os.listdir(current_path):
-            os.mkdir(os.path.join(current_path, search_keyword))
-        current_path = os.path.join(current_path, search_keyword)
+        if '萝卜投研' not in os.listdir(os.path.join(keyword_dir, 'report')):
+            os.mkdir(os.path.join(keyword_dir, 'report', '萝卜投研'))
+
+        current_path = os.path.join(keyword_dir, 'report', '萝卜投研')
 
         for pdf_id in url_list:
             content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)

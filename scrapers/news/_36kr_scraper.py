@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-import re
 import json
-import requests
-from bs4 import BeautifulSoup
 import os
+import re
 from datetime import datetime
 
-import pdfkit
-import shutil
+import requests
+from bs4 import BeautifulSoup
+
+from definitions import ROOT_DIR
+from utils import blacklist
 
 now = datetime.now()
 
 
-def urlParser(search, path, sum, num_years):
-    url = "https://36kr.com/search/articles/" + search + "?sort=score"
+def urlParser(search_keyword, path, sum, num_years):
+    url = "https://36kr.com/search/articles/" + search_keyword + "?sort=score"
 
     res = requests.get(url)  # init page
     html_page = res.content
@@ -22,39 +23,47 @@ def urlParser(search, path, sum, num_years):
                          {"class": "kr-search-result-list-main clearfloat"})  # find class that contains search results
     articles_count = 0
 
-    sum.write("搜索内容：" + search + "\n")
+    sum.write("搜索内容：" + search_keyword + "\n")
     sum.write("date: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + "\n")
     sum.write("\n")
 
     for a in articles.find_all('a', {"class": "article-item-title weight-bold"},
                                href=True):  # find all a links with href within class
-        url = "https://36kr.com" + a['href']
-        textScrape("https://36kr.com" + a['href'], path, sum, num_years)
+        textScrape(search_keyword, "https://36kr.com" + a['href'], path, sum, num_years)
         articles_count += 1
 
     print('--------Finished downloading %d articles from 36kr--------' % articles_count)
     sum.close()
 
 
-def prefilter(date, num_years):
+def prefilter(date, num_years, search_keyword):
     ret = True
+
+    # Date Filter
     dateToday = datetime.now().strftime("%Y")
     if date[0:3].isnumeric():
         years = int(dateToday) - int(date[0:4])
         if years > num_years:
             ret = False
+
+    # Blacklist Filter
+    bl = blacklist.Blacklist(search_keyword)
+    blacklist_exist = bl.blacklist_exist()
+    if blacklist_exist and bl.in_blacklist(search_keyword, '36kr'):
+        ret = False
+
     return ret
 
 
-def textScrape(url, path, sum, num_years):
+def textScrape(search_keyword, url, path, sum, num_years):
     url = url
     res = requests.get(url)
     html_page = res.content
     soup = BeautifulSoup(html_page, 'html.parser')
 
     pattern = re.compile(r"(?<=\"articleDetailData\":{\"code\":0,\"data\":{\"itemId\":)[0-9]*")
-    id = re.search(pattern, soup.text).group(0)
-    print('Processing article %s' % id)
+    doc_id = re.search(pattern, soup.text).group(0)
+    print('Processing article %s' % doc_id)
 
     pattern = re.compile(r"(?<=\"author\":\")(.*)(?=\",\"authorId)")
     author = re.search(pattern, soup.text).group(0)
@@ -64,18 +73,17 @@ def textScrape(url, path, sum, num_years):
     date = soup.find('span', {"class": "title-icon-item item-time"}).getText()[3:]
     article = soup.find('div', {"class": "article-content"})
 
-    if prefilter(date, num_years):
-        json_save_path = os.path.join(path, str(id) + '.json')
-        pdf_save_path = os.path.join(path, str(id) + '.pdf')
-        html_save_path = os.path.join(path, str(id) + '.html')
+    if prefilter(date, num_years, search_keyword):
+        json_save_path = os.path.join(path, str(doc_id) + '.json')
+        html_save_path = os.path.join(path, str(doc_id) + '.html')
 
         with open(html_save_path, "w", encoding='utf-8') as file:
             file.write(str(article))
-        # file.close()
 
         # Saving doc attributes
         doc_info = {
-            'doc_id': id,
+            'source': '36kr',
+            'doc_id': doc_id,
             'title': title,
             'date': date,
             'org_name': author,
@@ -96,25 +104,26 @@ def textScrape(url, path, sum, num_years):
 def run(search_keyword, num_years):
     # search = input("Please enter your search:")
     print('--------Begin searching articles from 36kr--------')
-    os.chdir('/Users/admin/Desktop/资料库Startup')
 
-    if 'news' not in os.listdir('cache'):
-        os.mkdir('cache/news')
-    if '36kr' not in os.listdir('cache/news'):
-        os.mkdir('cache/news/36kr')
-    path = 'cache/news/36kr'
+    os.chdir(ROOT_DIR)
+    keyword_dir = os.path.join('cache', search_keyword)
 
-    if search_keyword not in os.listdir(path):
-        os.mkdir(os.path.join(path, search_keyword))
-    path = os.path.join(path, search_keyword)
+    if search_keyword not in os.listdir('cache'):
+        os.mkdir(keyword_dir)
 
-    if not os.path.exists(path):
-        os.makedirs(path)
-    if os.path.exists(path + "summary.txt"):
-        sum = open(os.path.join(path, "summary" + ".txt"), "a", encoding='utf-8')
+    if 'news' not in os.listdir(keyword_dir):
+        os.mkdir(os.path.join(keyword_dir, 'news'))
+
+    if '36kr' not in os.listdir(os.path.join(keyword_dir, 'news')):
+        os.mkdir(os.path.join(keyword_dir, 'news', '36kr'))
+
+    current_path = os.path.join(keyword_dir, 'news', '36kr')
+
+    if os.path.exists(current_path + "summary.txt"):
+        sum = open(os.path.join(current_path, "summary" + ".txt"), "a", encoding='utf-8')
     else:
-        sum = open(os.path.join(path, "summary" + ".txt"), "w", encoding='utf-8')
-    urlParser(search_keyword, path, sum, num_years)
+        sum = open(os.path.join(current_path, "summary" + ".txt"), "w", encoding='utf-8')
+    urlParser(search_keyword, current_path, sum, num_years)
 
 
 if __name__ == '__main__':

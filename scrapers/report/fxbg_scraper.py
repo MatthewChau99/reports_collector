@@ -6,11 +6,7 @@ from typing import Optional
 import requests
 from fake_useragent import UserAgent
 from definitions import ROOT_DIR
-
-# User ID does not change for a fixed account
-# User Token changes for each individual login
-USER_ID = '43934'
-USER_TOKEN = 'TQWb58QRnrJXtIKUr2VG4UYy56gQzOD9Wh7VYkRHoKdVEDyKsIji1YIyS813XOGG'
+from utils import blacklist
 
 
 class FXBG:
@@ -23,6 +19,8 @@ class FXBG:
         self.s = requests.Session()
         self.user_token = user_token
         self.user_id = str(user_id)
+        self.blacklist = None
+        self.source = 'fxbg'
 
         # Request Headers
         self.headers = {
@@ -53,6 +51,10 @@ class FXBG:
         current_year = datetime.date.today().year
         years = [year for year in range(current_year - num_years + 1, current_year + 1)]
 
+        # Adding blacklist
+        self.blacklist = blacklist.Blacklist(search_keyword)
+        blacklist_exist = self.blacklist.blacklist_exist()
+
         search_url = 'https://api.mofoun.com/mofoun/search/report/search'
         payload = {
             'advancedQuery': 'true',
@@ -76,6 +78,11 @@ class FXBG:
         })
         response = self.s.post(url=search_url, data=json.dumps(payload), headers=headers).json()
         id_list = {doc['docId']: doc for doc in response['data']['dataList']}
+
+        # Checking blacklist
+        if blacklist_exist:
+            self.blacklist.blacklist_filter(id_list, self.source)
+
         return id_list
 
     def get_pdf_url(self, doc_list: dict, doc_type: Optional[str] = '2') -> dict:
@@ -105,13 +112,12 @@ class FXBG:
             doc = doc_list[doc_id]
             title = str(doc['title']).replace('<em>', '').replace('</em>', '')
 
-            updated_doc = {'source': 'fxbg',
+            updated_doc = {'source': self.source,
                            'doc_id': doc_id,
                            'date': ''.join([doc['pdfPath'][7:11], doc['pdfPath'][12:14], doc['pdfPath'][15:17]]),
                            'download_url': 'https://oss-buy.hufangde.com' + response['data'],
                            'org_name': doc['orgName'],
                            'page_num': doc['pageNum'],
-                           # 'score': doc['score'],
                            'doc_type': 'EXTERNAL_REPORT',
                            'title': title}
 
@@ -123,21 +129,23 @@ class FXBG:
     def download_pdf(self, search_keyword: str, url_list: dict):
         """
         通过提供的pdf下载url下载所有pdf至新建文件夹
+        下载文件路径: 根目录/cache/[关键词]/report/发现报告/
         :param search_keyword: 标题需要包含的关键词（公司名）
         :param url_list: 所有所需要下载的pdf文件的下载链接
         """
-        os.chdir('/Users/admin/Desktop/资料库Startup')
-        if 'report' not in os.listdir('cache'):
-            os.mkdir('cache/report')
+        os.chdir(ROOT_DIR)
+        keyword_dir = os.path.join('cache', search_keyword)
 
-        if '发现报告' not in os.listdir('cache/report'):
-            os.mkdir('cache/report/发现报告')
+        if search_keyword not in os.listdir('cache'):
+            os.mkdir(keyword_dir)
 
-        current_path = 'cache/report/发现报告'
+        if 'report' not in os.listdir(keyword_dir):
+            os.mkdir(os.path.join(keyword_dir, 'report'))
 
-        if search_keyword not in os.listdir(current_path):
-            os.mkdir(os.path.join(current_path, search_keyword))
-        current_path = os.path.join(current_path, search_keyword)
+        if '发现报告' not in os.listdir(os.path.join(keyword_dir, 'report')):
+            os.mkdir(os.path.join(keyword_dir, 'report', '发现报告'))
+
+        current_path = os.path.join(keyword_dir, 'report', '发现报告')
 
         pdf_count = 0
 
@@ -152,9 +160,7 @@ class FXBG:
             with open(pdf_save_path, 'wb') as f:
                 f.write(content)
 
-            # content_text = xpdf.to_text(pdf_save_path)[0]
             doc_info = url_list[pdf_id]
-            # doc_info.update({'content': content_text})
             txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
 
             with open(txt_save_path, 'w', encoding='utf-8') as f:
@@ -173,6 +179,8 @@ class FXBG:
 
 
 def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+    # User ID does not change for a fixed account
+    # User Token changes for each individual login
     USER_ID = '43934'
     USER_TOKEN = 'TQWb58QRnrJXtIKUr2VG4UYy56gQzOD9Wh7VYkRHoKdVEDyKsIji1YIyS813XOGG'
     fxbg_scraper = FXBG(USER_TOKEN, USER_ID)

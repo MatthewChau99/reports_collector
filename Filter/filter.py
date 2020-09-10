@@ -1,8 +1,12 @@
 import json
+import time
 
 import xpdf_python.wrapper as xpdf
 import os
 import pdfkit
+
+from utils import blacklist
+from definitions import ROOT_DIR
 
 
 class Filter:
@@ -55,6 +59,7 @@ class Filter:
                              '战略': '发展战略', '发展目标': '发展战略', '策略': '发展战略', '规划': '发展战略', '未来': '发展战略', '投资': '发展战略',
                              '融资': '发展战略'
                              }
+        self.blacklist = None
 
     def count_keywords(self, text: str) -> dict:
         """
@@ -114,7 +119,7 @@ class Filter:
                 os.remove(filename)
         os.chdir(curr_dir)
 
-    def pdf_process(self, directory):
+    def pdf_process(self, directory, search_keyword):
         """
         Data processing for data collected from websites that allow pdf download
         :param directory: the directory that contains the .pdf and .json files
@@ -135,14 +140,13 @@ class Filter:
                     text = self.pdf_to_text(filename)[0]
 
                     # Add company name to keyword
-                    company_name = os.path.basename(os.getcwd())
-                    self.keyword_list.update({company_name: '公司名称'})
+                    self.keyword_list.update({search_keyword: '搜索关键词'})
 
                     # Adding attributes to txt
                     keywords_count = self.count_keywords(text)
 
                     # Company name count
-                    if keywords_count[company_name] <= company_name_threshold:
+                    if keywords_count[search_keyword] <= company_name_threshold:
                         print('File %s deleted due to not enough keyword occurrences' % doc_id)
                         raise ValueError
 
@@ -153,7 +157,7 @@ class Filter:
                         attributes = json.load(file)
 
                         # Already been processed
-                        if 'content' in attributes.keys() or 'keywordCount' in attributes.keys():
+                        if 'content' in attributes.keys() and 'keywordCount' in attributes.keys():
                             continue
 
                         # Update json file
@@ -165,7 +169,14 @@ class Filter:
                     with open(doc_id + '.json', 'w', encoding='utf-8') as file:
                         json.dump(attributes, file, ensure_ascii=False, indent=4)
                         file.close()
+
                 except (ValueError, SyntaxError):
+                    self.blacklist = blacklist.Blacklist(search_keyword)
+                    source = json.load(open(json_filename, 'r', encoding='utf-8'))['source']
+                    print(doc_id)
+                    self.blacklist.add_to_blacklist(source, doc_id)
+                    self.blacklist.save_blacklist()
+
                     if os.path.exists(json_filename):
                         os.remove(json_filename)
                     if os.path.exists(filename):
@@ -173,6 +184,7 @@ class Filter:
                     if os.path.exists(doc_id + '.txt'):
                         os.remove(doc_id + '.txt')
                     continue
+
         os.chdir(curr_dir)
 
     def run_filter(self, file_type: str):
@@ -181,16 +193,17 @@ class Filter:
         For reports: pdf --> process pdf --> update json
         :param file_type: can either be 'news' or 'report'
         """
-        content_dir = 'cache/news' if file_type == 'news' else 'cache/report'
-        for source_name in os.listdir(content_dir):
-            # source_name: 发现报告/萝卜投研……
-            print('======== Processing files from %s ========' % source_name)
-            for keyword_name in os.listdir(os.path.join(content_dir, source_name)):
+        os.chdir(ROOT_DIR)
+
+        for keyword_name in os.listdir('cache'):
+            for source_name in os.listdir(os.path.join('cache', keyword_name, file_type)):
+                # source_name: 发现报告/萝卜投研……
+                print('======== Processing files from %s ========' % source_name)
                 # keyword_name: 中芯国际/可口可乐……
-                curr_dir = os.path.join(content_dir, source_name, keyword_name)
+                curr_dir = os.path.join('cache', keyword_name, file_type, source_name)
                 if file_type == 'news':
                     self.html_to_pdf(curr_dir)
-                self.pdf_process(curr_dir)
+                self.pdf_process(curr_dir, keyword_name)
 
 
 def run_both_filters():
@@ -200,4 +213,7 @@ def run_both_filters():
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     run_both_filters()
+    print("--- %s seconds ---" % (time.time() - start_time))
+
