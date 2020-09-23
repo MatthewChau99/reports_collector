@@ -6,7 +6,8 @@ from definitions import ROOT_DIR
 from utils.get_cookies import get_cookies
 import requests
 from fake_useragent import UserAgent
-from utils import blacklist
+from utils import bwlist
+from utils.errors import NoDocError
 import pprint as pp
 
 
@@ -39,11 +40,14 @@ class ROBO:
         }
         self.source = 'robo'
         self.blacklist = None
+        self.whitelist = None
 
     def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> dict:
-        # Create blacklist
-        self.blacklist = blacklist.Blacklist(search_keyword)
-        blacklist_exist = self.blacklist.blacklist_exist()
+        # Adding blacklist
+        self.blacklist = bwlist.BWList(search_keyword, 'black')
+        self.whitelist = bwlist.BWList(search_keyword, 'white')
+        blacklist_exist = self.blacklist.bwlist_exist()
+        whitelist_exist = self.whitelist.bwlist_exist()
 
         search_url = 'https://gw.datayes.com/rrp_adventure/web/search'
         headers = self.headers.copy()
@@ -61,11 +65,16 @@ class ROBO:
         }
         response = self.s.get(url=search_url, headers=headers, params=params).json()
         json_list = response['data']['list']
+
+        if not json_list:
+            raise NoDocError('No documents found')
+
         id_list = {doc['data']['id']: doc for doc in json_list}
 
         if blacklist_exist:
-            self.blacklist.blacklist_filter(id_list, self.source)
-
+            id_list = self.blacklist.bwlist_filter(id_list, self.source)
+        if whitelist_exist:
+            id_list = self.whitelist.bwlist_filter(id_list, self.source)
         print('--------Found %d pdfs in 萝卜投研--------' % len(id_list))
         return id_list
 
@@ -145,8 +154,12 @@ class ROBO:
 
     def run(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
         print('--------Begin searching pdfs from 萝卜投研--------')
-        pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
-        self.download_pdf(search_keyword, pdf_id_list)
+        try:
+            pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
+            self.download_pdf(search_keyword, pdf_id_list)
+        except NoDocError:
+            print('--------No documents found in 萝卜投研--------')
+            pass
 
 
 def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
@@ -157,4 +170,4 @@ def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_yea
 
 
 if __name__ == '__main__':
-    run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='200', num_years=5)
+    run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='100', num_years=5)

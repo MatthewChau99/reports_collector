@@ -1,3 +1,5 @@
+lxml
+config
 selenium
 pdfkit
 beautifulsoup4

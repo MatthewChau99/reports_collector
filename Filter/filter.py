@@ -5,7 +5,7 @@ import xpdf_python.wrapper as xpdf
 import os
 import pdfkit
 
-from utils import blacklist
+from utils import bwlist
 from definitions import ROOT_DIR
 
 
@@ -60,6 +60,7 @@ class Filter:
                              '融资': '发展战略'
                              }
         self.blacklist = None
+        self.whitelist = None
 
     def count_keywords(self, text: str) -> dict:
         """
@@ -127,12 +128,14 @@ class Filter:
         curr_dir = os.getcwd()
         os.chdir(directory)
         company_name_threshold = 30
+        self.blacklist = bwlist.BWList(search_keyword, 'black')
+        self.whitelist = bwlist.BWList(search_keyword, 'white')
 
         for filename in os.listdir(os.curdir):
             if filename.endswith('.pdf'):
                 doc_id = filename[0:len(filename) - 4]
                 json_filename = doc_id + '.json'
-
+                source = json.load(open(json_filename, 'r', encoding='utf-8'))['source']
                 print('Processing file with id %s' % doc_id)
 
                 try:
@@ -170,12 +173,12 @@ class Filter:
                         json.dump(attributes, file, ensure_ascii=False, indent=4)
                         file.close()
 
-                except (ValueError, SyntaxError):
-                    self.blacklist = blacklist.Blacklist(search_keyword)
-                    source = json.load(open(json_filename, 'r', encoding='utf-8'))['source']
-                    print(doc_id)
-                    self.blacklist.add_to_blacklist(source, doc_id)
-                    self.blacklist.save_blacklist()
+                    # Save downloaded id to whitelist
+                    self.whitelist.add_to_bwlist(source, doc_id)
+                except (ValueError, SyntaxError, FileNotFoundError):
+                    print('--------%s put to blacklist--------' % doc_id)
+                    # Save erroneous id to blacklist
+                    self.blacklist.add_to_bwlist(source, doc_id)
 
                     if os.path.exists(json_filename):
                         os.remove(json_filename)
@@ -185,6 +188,8 @@ class Filter:
                         os.remove(doc_id + '.txt')
                     continue
 
+        self.whitelist.save_bwlist()
+        self.blacklist.save_bwlist()
         os.chdir(curr_dir)
 
     def run_filter(self, file_type: str):
@@ -196,11 +201,15 @@ class Filter:
         os.chdir(ROOT_DIR)
 
         for keyword_name in os.listdir('cache'):
+            # keyword_name: 中芯国际/可口可乐……
+            if not os.path.isdir(os.path.join('cache', keyword_name)):
+                continue
             for source_name in os.listdir(os.path.join('cache', keyword_name, file_type)):
                 # source_name: 发现报告/萝卜投研……
-                print('======== Processing files from %s ========' % source_name)
-                # keyword_name: 中芯国际/可口可乐……
                 curr_dir = os.path.join('cache', keyword_name, file_type, source_name)
+                if not os.path.isdir(os.path.join('cache', keyword_name, file_type, source_name)):
+                    continue
+                print('======== Processing files from %s ========' % source_name)
                 if file_type == 'news':
                     self.html_to_pdf(curr_dir)
                 self.pdf_process(curr_dir, keyword_name)

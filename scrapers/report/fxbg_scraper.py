@@ -6,7 +6,8 @@ from typing import Optional
 import requests
 from fake_useragent import UserAgent
 from definitions import ROOT_DIR
-from utils import blacklist
+from utils import bwlist
+from utils.errors import NoDocError
 
 
 class FXBG:
@@ -20,6 +21,7 @@ class FXBG:
         self.user_token = user_token
         self.user_id = str(user_id)
         self.blacklist = None
+        self.whitelist = None
         self.source = 'fxbg'
 
         # Request Headers
@@ -52,8 +54,10 @@ class FXBG:
         years = [year for year in range(current_year - num_years + 1, current_year + 1)]
 
         # Adding blacklist
-        self.blacklist = blacklist.Blacklist(search_keyword)
-        blacklist_exist = self.blacklist.blacklist_exist()
+        self.blacklist = bwlist.BWList(search_keyword, 'black')
+        self.whitelist = bwlist.BWList(search_keyword, 'white')
+        blacklist_exist = self.blacklist.bwlist_exist()
+        whitelist_exist = self.whitelist.bwlist_exist()
 
         search_url = 'https://api.mofoun.com/mofoun/search/report/search'
         payload = {
@@ -77,11 +81,17 @@ class FXBG:
             'VERSION': '1.0.0',
         })
         response = self.s.post(url=search_url, data=json.dumps(payload), headers=headers).json()
+
+        if not response['data']['dataList']:
+            raise NoDocError('No documents found')
+
         id_list = {doc['docId']: doc for doc in response['data']['dataList']}
 
         # Checking blacklist
         if blacklist_exist:
-            self.blacklist.blacklist_filter(id_list, self.source)
+            id_list = self.blacklist.bwlist_filter(id_list, self.source)
+        if whitelist_exist:
+            id_list = self.whitelist.bwlist_filter(id_list, self.source)
 
         return id_list
 
@@ -174,7 +184,6 @@ class FXBG:
         print('--------Begin searching pdfs from 发现报告--------')
         pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
         pdf_url_list = self.get_pdf_url(pdf_id_list)
-
         self.download_pdf(search_keyword, pdf_url_list)
 
 
@@ -182,11 +191,15 @@ def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_yea
     # User ID does not change for a fixed account
     # User Token changes for each individual login
     USER_ID = '43934'
-    USER_TOKEN = 'TQWb58QRnrJXtIKUr2VG4UYy56gQzOD9Wh7VYkRHoKdVEDyKsIji1YIyS813XOGG'
-    fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
-    fxbg_scraper.run_fxbg(search_keyword=search_keyword, filter_keyword=filter_keyword,
-                          pdf_min_num_page=pdf_min_num_page, num_years=num_years)
+    USER_TOKEN = 'Ikmx0bIuFteVFp5T4WI7t5PRq2d1QEsNznIcc4LBjbQGonwI6tHr2iPN8nh1vBod'
+    try:
+        fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
+        fxbg_scraper.run_fxbg(search_keyword=search_keyword, filter_keyword=filter_keyword,
+                              pdf_min_num_page=pdf_min_num_page, num_years=num_years)
+    except NoDocError:
+        print('--------No documents found in 发现报告--------')
+        pass
 
 
 if __name__ == '__main__':
-    run(search_keyword='可口可乐', filter_keyword='', pdf_min_num_page='10', num_years=1)
+    run(search_keyword='可口可乐', filter_keyword='', pdf_min_num_page='1000', num_years=1)

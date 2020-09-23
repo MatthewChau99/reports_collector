@@ -8,7 +8,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from definitions import ROOT_DIR
-from utils import blacklist
+from utils import bwlist
+from utils.errors import NoDocError
 
 now = datetime.now()
 
@@ -21,6 +22,10 @@ def urlParser(search_keyword, path, sum, num_years):
     soup = BeautifulSoup(html_page, 'html.parser')
     articles = soup.find('ul',
                          {"class": "kr-search-result-list-main clearfloat"})  # find class that contains search results
+
+    if not articles:
+        raise NoDocError('No documents found')
+
     articles_count = 0
 
     sum.write("搜索内容：" + search_keyword + "\n")
@@ -29,14 +34,14 @@ def urlParser(search_keyword, path, sum, num_years):
 
     for a in articles.find_all('a', {"class": "article-item-title weight-bold"},
                                href=True):  # find all a links with href within class
-        textScrape(search_keyword, "https://36kr.com" + a['href'], path, sum, num_years)
-        articles_count += 1
+        if textScrape(search_keyword, "https://36kr.com" + a['href'], path, sum, num_years):
+            articles_count += 1
 
     print('--------Finished downloading %d articles from 36kr--------' % articles_count)
     sum.close()
 
 
-def prefilter(date, num_years, search_keyword):
+def prefilter(date, num_years, search_keyword, doc_id):
     ret = True
 
     # Date Filter
@@ -47,9 +52,12 @@ def prefilter(date, num_years, search_keyword):
             ret = False
 
     # Blacklist Filter
-    bl = blacklist.Blacklist(search_keyword)
-    blacklist_exist = bl.blacklist_exist()
-    if blacklist_exist and bl.in_blacklist(search_keyword, '36kr'):
+    bl = bwlist.BWList(search_keyword, 'black')
+    blacklist_exist = bl.bwlist_exist()
+    wh = bwlist.BWList(search_keyword, 'white')
+    whitelist_exist = wh.bwlist_exist()
+
+    if blacklist_exist and bl.in_bwlist(doc_id, '36kr') or whitelist_exist and wh.in_bwlist(doc_id, '36kr'):
         ret = False
 
     return ret
@@ -63,7 +71,6 @@ def textScrape(search_keyword, url, path, sum, num_years):
 
     pattern = re.compile(r"(?<=\"articleDetailData\":{\"code\":0,\"data\":{\"itemId\":)[0-9]*")
     doc_id = re.search(pattern, soup.text).group(0)
-    print('Processing article %s' % doc_id)
 
     pattern = re.compile(r"(?<=\"author\":\")(.*)(?=\",\"authorId)")
     author = re.search(pattern, soup.text).group(0)
@@ -73,7 +80,9 @@ def textScrape(search_keyword, url, path, sum, num_years):
     date = soup.find('span', {"class": "title-icon-item item-time"}).getText()[3:]
     article = soup.find('div', {"class": "article-content"})
 
-    if prefilter(date, num_years, search_keyword):
+    valid = prefilter(date, num_years, search_keyword, doc_id)
+    if valid:
+        print('Processing article %s' % doc_id)
         json_save_path = os.path.join(path, str(doc_id) + '.json')
         html_save_path = os.path.join(path, str(doc_id) + '.html')
 
@@ -100,31 +109,37 @@ def textScrape(search_keyword, url, path, sum, num_years):
         # sum.write(folderPath + "\n")
         sum.write("\n")
 
+    return valid
+
 
 def run(search_keyword, num_years):
-    # search = input("Please enter your search:")
     print('--------Begin searching articles from 36kr--------')
 
-    os.chdir(ROOT_DIR)
-    keyword_dir = os.path.join('cache', search_keyword)
+    try:
+        os.chdir(ROOT_DIR)
+        keyword_dir = os.path.join('cache', search_keyword)
 
-    if search_keyword not in os.listdir('cache'):
-        os.mkdir(keyword_dir)
+        if search_keyword not in os.listdir('cache'):
+            os.mkdir(keyword_dir)
 
-    if 'news' not in os.listdir(keyword_dir):
-        os.mkdir(os.path.join(keyword_dir, 'news'))
+        if 'news' not in os.listdir(keyword_dir):
+            os.mkdir(os.path.join(keyword_dir, 'news'))
 
-    if '36kr' not in os.listdir(os.path.join(keyword_dir, 'news')):
-        os.mkdir(os.path.join(keyword_dir, 'news', '36kr'))
+        if '36kr' not in os.listdir(os.path.join(keyword_dir, 'news')):
+            os.mkdir(os.path.join(keyword_dir, 'news', '36kr'))
 
-    current_path = os.path.join(keyword_dir, 'news', '36kr')
+        current_path = os.path.join(keyword_dir, 'news', '36kr')
 
-    if os.path.exists(current_path + "summary.txt"):
-        sum = open(os.path.join(current_path, "summary" + ".txt"), "a", encoding='utf-8')
-    else:
-        sum = open(os.path.join(current_path, "summary" + ".txt"), "w", encoding='utf-8')
-    urlParser(search_keyword, current_path, sum, num_years)
+        if os.path.exists(current_path + "summary.txt"):
+            sum = open(os.path.join(current_path, "summary" + ".txt"), "a", encoding='utf-8')
+        else:
+            sum = open(os.path.join(current_path, "summary" + ".txt"), "w", encoding='utf-8')
+        urlParser(search_keyword, current_path, sum, num_years)
+
+    except NoDocError:
+        print('--------No documents found in 36kr--------')
+        pass
 
 
 if __name__ == '__main__':
-    run(search_keyword='中芯国际', num_years=2)
+    run(search_keyword='中芯国际', num_years=1)
