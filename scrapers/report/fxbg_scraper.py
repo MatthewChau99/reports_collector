@@ -23,6 +23,7 @@ class FXBG:
         self.blacklist = None
         self.whitelist = None
         self.source = 'fxbg'
+        self.summary = {'source': 'fxbg', 'search_keyword': '', 'search_time': '', 'data': {}}
 
         # Request Headers
         self.headers = {
@@ -177,6 +178,17 @@ class FXBG:
                 json.dump(doc_info, f, ensure_ascii=False, indent=4)
 
             pdf_count += 1
+
+            # Saving into summary
+            self.summary.update({'search_keyword': search_keyword})
+            self.summary.update({'search_time': str(datetime.datetime.now())})
+            self.summary['data'].update({pdf_id: pdf_save_path})
+
+        # Saving summary
+        if self.summary['data']:
+            summary_save_path = os.path.join(current_path, 'summary.json')
+            with open(summary_save_path, 'w', encoding='utf-8') as f:
+                json.dump(self.summary, f, ensure_ascii=False, indent=4)
 
         print('--------Finished downloading %d pdfs from 发现报告--------' % pdf_count)
 

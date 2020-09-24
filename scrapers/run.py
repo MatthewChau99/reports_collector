@@ -11,18 +11,18 @@ import time
 
 
 def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
-    fxbg.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
-             num_years=num_years)
+    # fxbg.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
+    #          num_years=num_years)
     robo.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
              num_years=num_years)
     _36kr.run(search_keyword=search_keyword, num_years=num_years)
 
-    cyzone.run(search_keyword=search_keyword)
-    huxiu.run(search_keyword=search_keyword)
-    iyiou.run(search_keyword=search_keyword)
-    leiphone.run(search_keyword=search_keyword)
-    pencilnews.run(search_keyword=search_keyword)
-    lieyunwang.run(search_keyword=search_keyword)
+    # cyzone.run(search_keyword=search_keyword)
+    # huxiu.run(search_keyword=search_keyword)
+    # iyiou.run(search_keyword=search_keyword)
+    # leiphone.run(search_keyword=search_keyword)
+    # pencilnews.run(search_keyword=search_keyword)
+    # lieyunwang.run(search_keyword=search_keyword)
 
 
 if __name__ == '__main__':

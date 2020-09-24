@@ -14,7 +14,7 @@ from utils.errors import NoDocError
 now = datetime.now()
 
 
-def urlParser(search_keyword, path, sum, num_years):
+def urlParser(search_keyword, path, summary, num_years):
     url = "https://36kr.com/search/articles/" + search_keyword + "?sort=score"
 
     res = requests.get(url)  # init page
@@ -28,17 +28,23 @@ def urlParser(search_keyword, path, sum, num_years):
 
     articles_count = 0
 
-    sum.write("搜索内容：" + search_keyword + "\n")
-    sum.write("date: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S") + "\n")
-    sum.write("\n")
+    summary.update({'source': '36kr'})
+    summary.update({'search_keyword': search_keyword})
+    summary.update({'search_time': str(datetime.now())})
+    summary.update({'data': {}})
 
     for a in articles.find_all('a', {"class": "article-item-title weight-bold"},
                                href=True):  # find all a links with href within class
-        if textScrape(search_keyword, "https://36kr.com" + a['href'], path, sum, num_years):
+        valid, summary = textScrape(search_keyword, "https://36kr.com" + a['href'], path, summary, num_years)
+        if valid:
             articles_count += 1
 
+    if summary['data']:
+        summary_save_path = os.path.join(path, 'summary.json')
+        with open(summary_save_path, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, ensure_ascii=False, indent=4)
+
     print('--------Finished downloading %d articles from 36kr--------' % articles_count)
-    sum.close()
 
 
 def prefilter(date, num_years, search_keyword, doc_id):
@@ -63,7 +69,7 @@ def prefilter(date, num_years, search_keyword, doc_id):
     return ret
 
 
-def textScrape(search_keyword, url, path, sum, num_years):
+def textScrape(search_keyword, url, path, summary, num_years):
     url = url
     res = requests.get(url)
     html_page = res.content
@@ -81,10 +87,12 @@ def textScrape(search_keyword, url, path, sum, num_years):
     article = soup.find('div', {"class": "article-content"})
 
     valid = prefilter(date, num_years, search_keyword, doc_id)
+
     if valid:
         print('Processing article %s' % doc_id)
         json_save_path = os.path.join(path, str(doc_id) + '.json')
         html_save_path = os.path.join(path, str(doc_id) + '.html')
+        pdf_save_path = os.path.join(path, str(doc_id) + '.pdf')
 
         with open(html_save_path, "w", encoding='utf-8') as file:
             file.write(str(article))
@@ -99,17 +107,15 @@ def textScrape(search_keyword, url, path, sum, num_years):
             'doc_type': 'NEWS'
         }
 
+        if 'data' not in summary.keys():
+            summary.update({'data': {}})
+        else:
+            summary['data'].update({doc_id: pdf_save_path})
+
         with open(json_save_path, 'w', encoding='utf-8') as f:
             json.dump(doc_info, f, ensure_ascii=False, indent=4)
 
-        # shutil.move("article.pdf", folderPath)
-
-        sum.write(title + "\n")
-        sum.write(date + "\n")
-        # sum.write(folderPath + "\n")
-        sum.write("\n")
-
-    return valid
+    return valid, summary
 
 
 def run(search_keyword, num_years):
@@ -131,10 +137,12 @@ def run(search_keyword, num_years):
         current_path = os.path.join(keyword_dir, 'news', '36kr')
 
         if os.path.exists(current_path + "summary.txt"):
-            sum = open(os.path.join(current_path, "summary" + ".txt"), "a", encoding='utf-8')
+            sum = open(os.path.join(current_path, "summary" + ".json"), "a", encoding='utf-8')
         else:
-            sum = open(os.path.join(current_path, "summary" + ".txt"), "w", encoding='utf-8')
-        urlParser(search_keyword, current_path, sum, num_years)
+            sum = open(os.path.join(current_path, "summary" + ".json"), "w", encoding='utf-8')
+
+        summary = {}
+        urlParser(search_keyword, current_path, summary, num_years)
 
     except NoDocError:
         print('--------No documents found in 36kr--------')
@@ -142,4 +150,4 @@ def run(search_keyword, num_years):
 
 
 if __name__ == '__main__':
-    run(search_keyword='中芯国际', num_years=1)
+    run(search_keyword='可口可乐', num_years=1)

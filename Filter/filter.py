@@ -61,6 +61,7 @@ class Filter:
                              }
         self.blacklist = None
         self.whitelist = None
+        self.summary = {}
 
     def count_keywords(self, text: str) -> dict:
         """
@@ -114,8 +115,10 @@ class Filter:
                     'encoding': "UTF-8",
                     'no-outline': None
                 }
-                pdfkit.from_file(filename, pdf_filename, options=options)
-
+                try:
+                    pdfkit.from_file(filename, pdf_filename, options=options)
+                except:
+                    continue
                 # Removing html files
                 os.remove(filename)
         os.chdir(curr_dir)
@@ -190,7 +193,27 @@ class Filter:
 
         self.whitelist.save_bwlist()
         self.blacklist.save_bwlist()
+
+        if os.path.exists('summary.json'):
+            self.add_summary(search_keyword)
         os.chdir(curr_dir)
+
+    def add_summary(self, keyword_name):
+        source_summary = json.load(open('summary.json', 'r', encoding='utf-8'))
+        source_summary.pop('search_keyword')
+
+        if keyword_name not in self.summary.keys():
+            self.summary.update({keyword_name: [source_summary]})
+        elif 'data' in source_summary.keys():
+            updated = self.summary[keyword_name]
+            updated.append(source_summary)
+            self.summary.update({keyword_name: updated})
+
+    def save_summary(self, keyword_name):
+        save_path = os.path.join(ROOT_DIR, 'cache', keyword_name, 'summary.json')
+        if self.summary[keyword_name]:
+            with open(save_path, 'w', encoding='utf-8') as f:
+                json.dump(self.summary, f, ensure_ascii=False, indent=4)
 
     def run_filter(self, file_type: str):
         """
@@ -213,6 +236,7 @@ class Filter:
                 if file_type == 'news':
                     self.html_to_pdf(curr_dir)
                 self.pdf_process(curr_dir, keyword_name)
+            self.save_summary(keyword_name)
 
 
 def run_both_filters():

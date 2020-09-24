@@ -41,6 +41,7 @@ class ROBO:
         self.source = 'robo'
         self.blacklist = None
         self.whitelist = None
+        self.summary = {}
 
     def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> dict:
         # Adding blacklist
@@ -141,6 +142,14 @@ class ROBO:
                     json.dump(doc_info, f, ensure_ascii=False, indent=4)
 
                 pdf_count += 1
+
+                self.summary.update({'source': 'robo'})
+                self.summary.update({'search_keyword': search_keyword})
+                self.summary.update({'search_time': str(datetime.datetime.now())})
+
+                if 'data' not in self.summary.keys():
+                    self.summary.update({'data': {}})
+                self.summary['data'].update({pdf_id: pdf_save_path})
             except:
                 if os.path.exists(pdf_save_path):
                     os.remove(pdf_save_path)
@@ -149,6 +158,12 @@ class ROBO:
                     os.remove(txt_save_path)
 
                 continue
+
+        # Saving summary
+        if self.summary:
+            summary_save_path = os.path.join(current_path, 'summary.json')
+            with open(summary_save_path, 'w', encoding='utf-8') as f:
+                json.dump(self.summary, f, ensure_ascii=False, indent=4)
 
         print('--------Finished downloading %d pdfs from 萝卜投研--------' % pdf_count)
 
