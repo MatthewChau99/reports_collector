@@ -12,7 +12,9 @@ import os
 import sys
 import getopt
 import time
-from definitions import ROOT_DIR
+from definitions import ROOT_DIR, OSS_PATH
+import oss.mongodb as mg
+import oss.oss as ossfile
 
 
 def get_pagenum(path):
@@ -26,7 +28,7 @@ def get_pagenum(path):
 def get_url_dynamic(url):
     driver = webdriver.Chrome()
     driver.get(url)
-    time.sleep(2)
+    time.sleep(0.5)
     html_text = driver.page_source
     # driver.quit()
     return html_text
@@ -61,7 +63,7 @@ def get_urls(searchword, begin_time, art_num):
     return res
 
 
-def form_json(id, soup, content, searchword, begin_time, current_path):
+def form_json(id, soup, content, searchword, begin_time, current_path, oss_path):
     info = {}
     # 获取时间
     date = soup.find_all('time')[0].text
@@ -73,17 +75,18 @@ def form_json(id, soup, content, searchword, begin_time, current_path):
         return False
     info['date'] = date
     # 获取id, type, source, author
-    info['id'] = id
-    info['type'] = 'report'
+    info['doc_id'] = int(id)
+    info['doc_type'] = 'report'
     info['source'] = '人人都是产品经理'
     info['url'] = 'http://www.woshipm.com/pd/'+id+'.html'
+    info['pdf_url'] = OSS_PATH+oss_path
     info['content'] = content
     author = soup.find(class_='author u-flex').find('a').text
     print('author:', author)
     info['author'] = author
     # 获取页数
     # print(path)
-    pdf_save_path = os.path.join(current_path, str(id) + '.pdf')
+    pdf_save_path = os.path.join(current_path, id + '.pdf')
     page_num = get_pagenum(pdf_save_path)
     print("Number of pages:", page_num)
     info['page_num'] = page_num
@@ -92,9 +95,11 @@ def form_json(id, soup, content, searchword, begin_time, current_path):
     print('title:', title)
     info['title'] = title
     # print(info)
-    json_save_path = os.path.join(current_path, str(id) + '.json')
+    json_save_path = os.path.join(current_path, id + '.json')
     with open(json_save_path, 'w') as f:
         f.write(json.dumps(info, ensure_ascii=False, indent=4, separators=(',', ':')))
+    # store into mongodb
+    mg.insert_data(info, 'woshipm')
     return True
 
 
@@ -141,8 +146,13 @@ def process_article(id, words_min, searchword, keywords, begin_time):
         config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
         pdfkit.from_url(url, pdf_save_path, configuration=config)
 
+        #上传pdf to oss
+        oss_path = 'report/woshipm/'+id+'.pdf'
+        print('Uploading file to ali_oss at '+OSS_PATH+oss_path)
+        ossfile.upload_file(oss_path, pdf_save_path)
+
         #获取json信息
-        conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path)
+        conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path, oss_path)
         if conti == False:
             return False
     # print(result)
@@ -225,9 +235,16 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
         os.mkdir(os.path.join(keyword_dir, 'report', 'woshipm'))
     for id in ids:
         print("Processing article #" + str(id))
+        #check whether or not already in database
+        id_match_res = mg.show_datas('woshipm', query={'doc_id': int(id)})
+        # print(id_match_res)
+        if id_match_res!=[]:
+            print('article #'+id+' is already in database. Skipped.')
+            continue
         status = process_article(id, int(words_min), searchword, keywords, begin_time)
         if status == False:
             break
+    mg.show_datas('woshipm')
 
 
 if __name__=="__main__":
