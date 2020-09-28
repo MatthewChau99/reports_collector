@@ -6,7 +6,8 @@ import os
 import pdfkit
 
 from utils import bwlist
-from definitions import ROOT_DIR
+from definitions import ROOT_DIR, COMPANY_NAME_OCCUR
+import pprint as pp
 
 
 class Filter:
@@ -77,7 +78,12 @@ class Filter:
 
         return counter
 
-    def count_tags(self, keyword_counter: dict):
+    def count_tags(self, keyword_counter: dict) -> dict:
+        """
+        Helper method that counts the number of for a pdf
+        :param keyword_counter: dict that stores the occurrence of each keyword in the text
+        :return: a dict that stores the tags that a pdf owns
+        """
         counter = {}
 
         for tag in self.tags:
@@ -87,7 +93,12 @@ class Filter:
 
         return counter
 
-    def pdf_to_text(self, pdf_path):
+    def pdf_to_text(self, pdf_path) -> str:
+        """
+        Converts pdf to text by calling xpdf library
+        :param pdf_path: path to pdf
+        :return: the pdf text as string
+        """
         text = xpdf.to_text(pdf_path)
         return text
 
@@ -130,7 +141,7 @@ class Filter:
         """
         curr_dir = os.getcwd()
         os.chdir(directory)
-        company_name_threshold = 30
+        company_name_threshold = COMPANY_NAME_OCCUR
         self.blacklist = bwlist.BWList(search_keyword, 'black')
         self.whitelist = bwlist.BWList(search_keyword, 'white')
 
@@ -180,9 +191,10 @@ class Filter:
                     self.whitelist.add_to_bwlist(source, doc_id)
                 except (ValueError, SyntaxError, FileNotFoundError):
                     print('--------%s put to blacklist--------' % doc_id)
-                    # Save erroneous id to blacklist
+                    # Save problematic id to blacklist
                     self.blacklist.add_to_bwlist(source, doc_id)
 
+                    # Remove problematic files
                     if os.path.exists(json_filename):
                         os.remove(json_filename)
                     if os.path.exists(filename):
@@ -191,6 +203,7 @@ class Filter:
                         os.remove(doc_id + '.txt')
                     continue
 
+        # Saving blacklist and whitelist
         self.whitelist.save_bwlist()
         self.blacklist.save_bwlist()
 
@@ -198,20 +211,44 @@ class Filter:
             self.add_summary(search_keyword)
         os.chdir(curr_dir)
 
-    def add_summary(self, keyword_name):
+    def add_summary(self, search_keyword):
+        """
+        For EACH website, add all json files from local summary (just for that website) to universal summary
+        :param search_keyword: search keyword
+        """
+        # Loading local summary
         source_summary = json.load(open('summary.json', 'r', encoding='utf-8'))
-        source_summary.pop('search_keyword')
 
-        if keyword_name not in self.summary.keys():
-            self.summary.update({keyword_name: [source_summary]})
+        # Removing unnecessary attribute
+        if 'search_keyword' in source_summary.keys():
+            source_summary.pop('search_keyword')
+
+        source_name = source_summary['source']                              # '36kr'
+
+        # Removing blacklisted ids from local summary
+        if source_name in self.blacklist.list.keys():
+            for source_id in self.blacklist.list[source_name]:
+                if source_id in source_summary['data'].keys():
+                    source_summary['data'].pop(source_id)
+
+        # Update to overall summary
+        if search_keyword not in self.summary.keys():
+            self.summary.update({search_keyword: {source_name: source_summary.copy()}})
         elif 'data' in source_summary.keys():
-            updated = self.summary[keyword_name]
-            updated.append(source_summary)
-            self.summary.update({keyword_name: updated})
+            updated = self.summary[search_keyword]
+            updated.update({source_name: source_summary.copy()})
+            self.summary.update({search_keyword: updated})
 
-    def save_summary(self, keyword_name):
-        save_path = os.path.join(ROOT_DIR, 'cache', keyword_name, 'summary.json')
-        if self.summary[keyword_name]:
+        # Saving local summary
+        json.dump(source_summary, open('summary.json', 'w', encoding='utf-8'))
+
+    def save_summary(self, search_keyword):
+        """
+        Save the summary for EACH KEYWORD
+        :param search_keyword: search keyword
+        """
+        save_path = os.path.join(ROOT_DIR, 'cache', search_keyword, 'summary.json')
+        if self.summary[search_keyword]:
             with open(save_path, 'w', encoding='utf-8') as f:
                 json.dump(self.summary, f, ensure_ascii=False, indent=4)
 
@@ -230,16 +267,26 @@ class Filter:
             for source_name in os.listdir(os.path.join('cache', keyword_name, file_type)):
                 # source_name: 发现报告/萝卜投研……
                 curr_dir = os.path.join('cache', keyword_name, file_type, source_name)
-                if not os.path.isdir(os.path.join('cache', keyword_name, file_type, source_name)):
+
+                # path does not exist
+                if not os.path.isdir(curr_dir):
                     continue
+
                 print('======== Processing files from %s ========' % source_name)
+
+                # Convert html files to pdf first for news sources
                 if file_type == 'news':
                     self.html_to_pdf(curr_dir)
+
+                # Process all pdf files
                 self.pdf_process(curr_dir, keyword_name)
             self.save_summary(keyword_name)
 
 
 def run_both_filters():
+    """
+    Runs both news filter and reports filter. News filter converts html to pdf, Report filter doesn't.
+    """
     file_filter = Filter()
     file_filter.run_filter(file_type='news')
     file_filter.run_filter(file_type='report')
@@ -249,4 +296,3 @@ if __name__ == '__main__':
     start_time = time.time()
     run_both_filters()
     print("--- %s seconds ---" % (time.time() - start_time))
-

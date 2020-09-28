@@ -144,6 +144,7 @@ class ROBO:
                 pdf_count += 1
 
                 self.summary.update({'source': 'robo'})
+                self.summary.update({'source_type': 'report'})
                 self.summary.update({'search_keyword': search_keyword})
                 self.summary.update({'search_time': str(datetime.datetime.now())})
 

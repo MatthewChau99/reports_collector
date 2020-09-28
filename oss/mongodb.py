@@ -12,7 +12,7 @@ def insert_data(data, collection, db='articles'):
 
 def insert_datas(data_list, collection, db='articles'):
     mydb = myclient[db]  # use articles as default database
-    mycol = mydb[collection]    #collection
+    mycol = mydb[collection]  # collection
     x = mycol.insert_many(data_list)
     print(x.inserted_ids)
 
@@ -52,7 +52,7 @@ def delete_col(collection, db='articles'):
 
 if __name__ == '__main__':
     insert_datas([{'a': 'hello2'}, {'a': 'hello3'}, {'a': 'hello4'}], 'fxbg')
-    data = show_datas('fxbg',sortby='a', seq=False)
+    data = show_datas('fxbg', sortby='a', seq=False)
     print(data)
     delete_datas({'a': {'$regex': '^mod'}}, 'fxbg')
     update_datas({'a': {'$regex': '^hello'}}, {'$set': {'a': 'modified'}}, 'fxbg')

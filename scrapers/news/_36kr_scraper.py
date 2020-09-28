@@ -29,6 +29,7 @@ def urlParser(search_keyword, path, summary, num_years):
     articles_count = 0
 
     summary.update({'source': '36kr'})
+    summary.update({'source_type': 'news'})
     summary.update({'search_keyword': search_keyword})
     summary.update({'search_time': str(datetime.now())})
     summary.update({'data': {}})
@@ -50,14 +51,14 @@ def urlParser(search_keyword, path, summary, num_years):
 def prefilter(date, num_years, search_keyword, doc_id):
     ret = True
 
-    # Date Filter
+    # Date processing
     dateToday = datetime.now().strftime("%Y")
     if date[0:3].isnumeric():
         years = int(dateToday) - int(date[0:4])
         if years > num_years:
             ret = False
 
-    # Blacklist Filter
+    # Blacklist processing
     bl = bwlist.BWList(search_keyword, 'black')
     blacklist_exist = bl.bwlist_exist()
     wh = bwlist.BWList(search_keyword, 'white')

@@ -23,7 +23,7 @@ class FXBG:
         self.blacklist = None
         self.whitelist = None
         self.source = 'fxbg'
-        self.summary = {'source': 'fxbg', 'search_keyword': '', 'search_time': '', 'data': {}}
+        self.summary = {'source': 'fxbg', 'source_type': 'report', 'search_keyword': '', 'search_time': '', 'data': {}}
 
         # Request Headers
         self.headers = {
@@ -203,7 +203,7 @@ def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_yea
     # User ID does not change for a fixed account
     # User Token changes for each individual login
     USER_ID = '43934'
-    USER_TOKEN = 'Ikmx0bIuFteVFp5T4WI7t5PRq2d1QEsNznIcc4LBjbQGonwI6tHr2iPN8nh1vBod'
+    USER_TOKEN = 'mpvj5z7Vr666q4FiZjKww3hesUVIaBXbNUfxfA2VJ0bNjMVla2yM7vZaWkwGNPpL'
     try:
         fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
         fxbg_scraper.run_fxbg(search_keyword=search_keyword, filter_keyword=filter_keyword,
