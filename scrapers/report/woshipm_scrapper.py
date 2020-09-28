@@ -12,6 +12,9 @@ import os
 import sys
 import getopt
 import time
+from definitions import ROOT_DIR, OSS_PATH
+import oss.mongodb as mg
+import oss.oss as ossfile
 
 
 def get_pagenum(path):
@@ -25,7 +28,7 @@ def get_pagenum(path):
 def get_url_dynamic(url):
     driver = webdriver.Chrome()
     driver.get(url)
-    time.sleep(3)
+    time.sleep(0.5)
     html_text = driver.page_source
     # driver.quit()
     return html_text
@@ -46,8 +49,8 @@ def get_urls(searchword, begin_time, art_num):
         except:
             print('Error')
         # print(response)
-        with open('page2.html', 'w') as f:
-            f.write(response)
+        # with open('page2.html', 'w') as f:
+        #     f.write(response)
         soup = BeautifulSoup(response, features="html.parser")
         articles = soup.find_all(class_='clearfix row article-cont')
 
@@ -60,7 +63,7 @@ def get_urls(searchword, begin_time, art_num):
     return res
 
 
-def form_json(id, soup, content, searchword, begin_time):
+def form_json(id, soup, content, searchword, begin_time, current_path, oss_path):
     info = {}
     # 获取时间
     date = soup.find_all('time')[0].text
@@ -72,17 +75,19 @@ def form_json(id, soup, content, searchword, begin_time):
         return False
     info['date'] = date
     # 获取id, type, source, author
-    info['id'] = id
-    info['type'] = 'report'
+    info['doc_id'] = int(id)
+    info['doc_type'] = 'report'
     info['source'] = '人人都是产品经理'
     info['url'] = 'http://www.woshipm.com/pd/'+id+'.html'
+    info['pdf_url'] = OSS_PATH+oss_path
     info['content'] = content
     author = soup.find(class_='author u-flex').find('a').text
     print('author:', author)
     info['author'] = author
     # 获取页数
-    path = searchword+"/"+id+'.pdf'
-    page_num = get_pagenum(path)
+    # print(path)
+    pdf_save_path = os.path.join(current_path, id + '.pdf')
+    page_num = get_pagenum(pdf_save_path)
     print("Number of pages:", page_num)
     info['page_num'] = page_num
     # 获取title
@@ -90,8 +95,11 @@ def form_json(id, soup, content, searchword, begin_time):
     print('title:', title)
     info['title'] = title
     # print(info)
-    with open(searchword+'/'+id+'.json', 'w') as f:
+    json_save_path = os.path.join(current_path, id + '.json')
+    with open(json_save_path, 'w') as f:
         f.write(json.dumps(info, ensure_ascii=False, indent=4, separators=(',', ':')))
+    # store into mongodb
+    mg.insert_data(info, 'woshipm')
     return True
 
 
@@ -126,18 +134,27 @@ def process_article(id, words_min, searchword, keywords, begin_time):
         raw_txt += t.text
 
     if len(raw_txt) >= words_min: # 判断文本长度
-        # 获取json信息
-        conti = form_json(id, soup, raw_txt, searchword, begin_time)
-        if conti == False:
-            return False
         calc_keywords(raw_txt, keywords)
         # 转换pdf
         print("Word count: ", len(raw_txt))
         print("Downloading article #" + id + ' ' + url)
         # print("content:", raw_txt)
-        path = searchword + "/" + id + '.pdf'
+        os.chdir(ROOT_DIR)
+        keyword_dir = os.path.join(ROOT_DIR, 'cache', searchword)
+        current_path = os.path.join(keyword_dir, 'report', 'woshipm')
+        pdf_save_path = os.path.join(current_path, str(id) + '.pdf')
         config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
-        pdfkit.from_url(url, path, configuration=config)
+        pdfkit.from_url(url, pdf_save_path, configuration=config)
+
+        #上传pdf to oss
+        oss_path = 'report/woshipm/'+id+'.pdf'
+        print('Uploading file to ali_oss at '+OSS_PATH+oss_path)
+        ossfile.upload_file(oss_path, pdf_save_path)
+
+        #获取json信息
+        conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path, oss_path)
+        if conti == False:
+            return False
     # print(result)
     return True
 
@@ -204,15 +221,30 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
         print(begin_time)
     if keywords == '':
         keywords = '战略,进步,成功,失败,生长,增长'
-    if searchword not in os.listdir():
-        os.mkdir(searchword)
+    # if searchword not in os.listdir():
+    #     os.mkdir(searchword)
     ids = get_urls(searchword, begin_time, int(art_num))
     print("Found articles count: " + str(len(ids)))
+    # os.chdir(ROOT_DIR)
+    keyword_dir = os.path.join(ROOT_DIR, 'cache', searchword)
+    if searchword not in os.listdir('cache'):
+        os.mkdir(keyword_dir)
+    if 'report' not in os.listdir(keyword_dir):
+        os.mkdir(os.path.join(keyword_dir, 'report'))
+    if 'woshipm' not in os.listdir(os.path.join(keyword_dir, 'report')):
+        os.mkdir(os.path.join(keyword_dir, 'report', 'woshipm'))
     for id in ids:
         print("Processing article #" + str(id))
+        #check whether or not already in database
+        id_match_res = mg.show_datas('woshipm', query={'doc_id': int(id)})
+        # print(id_match_res)
+        if id_match_res!=[]:
+            print('article #'+id+' is already in database. Skipped.')
+            continue
         status = process_article(id, int(words_min), searchword, keywords, begin_time)
         if status == False:
             break
+    mg.show_datas('woshipm')
 
 
 if __name__=="__main__":

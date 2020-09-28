@@ -17,14 +17,14 @@ def insert_datas(data_list, collection, db='articles'):
     print(x.inserted_ids)
 
 
-def show_datas(collection, db='articles', sortby='_id', seq=True):
+def show_datas(collection, query={}, db='articles', sortby='_id', seq=True):
     mydb = myclient[db]
     mycol = mydb[collection]
     result = []
     if seq:
-        objects = mycol.find().sort(sortby)
+        objects = mycol.find(query).sort(sortby)
     else:
-        objects = mycol.find().sort(sortby, -1)
+        objects = mycol.find(query).sort(sortby, -1)
     for x in objects:
         result.append(x)
     return result
@@ -61,3 +61,5 @@ if __name__ == '__main__':
     # 获取数据库list
     dblist = myclient.list_database_names()
     print(dblist)
+    id_match_res = show_datas('woshipm',query={'id': 3134984})
+    print(id_match_res)
