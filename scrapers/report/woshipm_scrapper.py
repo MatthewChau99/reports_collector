@@ -12,6 +12,7 @@ import os
 import sys
 import getopt
 import time
+from definitions import ROOT_DIR
 
 
 def get_pagenum(path):
@@ -46,8 +47,8 @@ def get_urls(searchword, begin_time, art_num):
         except:
             print('Error')
         # print(response)
-        with open('page2.html', 'w') as f:
-            f.write(response)
+        # with open('page2.html', 'w') as f:
+        #     f.write(response)
         soup = BeautifulSoup(response, features="html.parser")
         articles = soup.find_all(class_='clearfix row article-cont')
 
@@ -60,7 +61,7 @@ def get_urls(searchword, begin_time, art_num):
     return res
 
 
-def form_json(id, soup, content, searchword, begin_time):
+def form_json(id, soup, content, searchword, begin_time, path):
     info = {}
     # 获取时间
     date = soup.find_all('time')[0].text
@@ -81,7 +82,7 @@ def form_json(id, soup, content, searchword, begin_time):
     print('author:', author)
     info['author'] = author
     # 获取页数
-    path = searchword+"/"+id+'.pdf'
+    print(path)
     page_num = get_pagenum(path)
     print("Number of pages:", page_num)
     info['page_num'] = page_num
@@ -126,18 +127,22 @@ def process_article(id, words_min, searchword, keywords, begin_time):
         raw_txt += t.text
 
     if len(raw_txt) >= words_min: # 判断文本长度
-        # 获取json信息
-        conti = form_json(id, soup, raw_txt, searchword, begin_time)
-        if conti == False:
-            return False
         calc_keywords(raw_txt, keywords)
         # 转换pdf
         print("Word count: ", len(raw_txt))
         print("Downloading article #" + id + ' ' + url)
         # print("content:", raw_txt)
-        path = searchword + "/" + id + '.pdf'
+        os.chdir(ROOT_DIR)
+        keyword_dir = os.path.join(ROOT_DIR, 'cache', searchword)
+        current_path = os.path.join(keyword_dir, 'report', 'woshipm')
+        pdf_save_path = os.path.join(current_path, str(id) + '.pdf')
         config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
-        pdfkit.from_url(url, path, configuration=config)
+        pdfkit.from_url(url, pdf_save_path, configuration=config)
+
+        # 获取json信息
+        # conti = form_json(id, soup, raw_txt, searchword, begin_time, pdf_save_path)
+        # if conti == False:
+        #     return False
     # print(result)
     return True
 
@@ -204,15 +209,24 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
         print(begin_time)
     if keywords == '':
         keywords = '战略,进步,成功,失败,生长,增长'
-    if searchword not in os.listdir():
-        os.mkdir(searchword)
+    # if searchword not in os.listdir():
+    #     os.mkdir(searchword)
     ids = get_urls(searchword, begin_time, int(art_num))
     print("Found articles count: " + str(len(ids)))
-    for id in ids:
-        print("Processing article #" + str(id))
-        status = process_article(id, int(words_min), searchword, keywords, begin_time)
-        if status == False:
-            break
+    # os.chdir(ROOT_DIR)
+    keyword_dir = os.path.join(ROOT_DIR, 'cache', searchword)
+    print('PATH: ________ '+keyword_dir)
+    if searchword not in os.listdir('cache'):
+        os.mkdir(keyword_dir)
+    if 'report' not in os.listdir(keyword_dir):
+        os.mkdir(os.path.join(keyword_dir, 'report'))
+    if 'woshipm' not in os.listdir(os.path.join(keyword_dir, 'report')):
+        os.mkdir(os.path.join(keyword_dir, 'report', 'woshipm'))
+    # for id in ids:
+    #     print("Processing article #" + str(id))
+    #     status = process_article(id, int(words_min), searchword, keywords, begin_time)
+    #     if status == False:
+    #         break
 
 
 if __name__=="__main__":
