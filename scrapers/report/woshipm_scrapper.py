@@ -26,7 +26,7 @@ def get_pagenum(path):
 def get_url_dynamic(url):
     driver = webdriver.Chrome()
     driver.get(url)
-    time.sleep(3)
+    time.sleep(2)
     html_text = driver.page_source
     # driver.quit()
     return html_text
@@ -61,7 +61,7 @@ def get_urls(searchword, begin_time, art_num):
     return res
 
 
-def form_json(id, soup, content, searchword, begin_time, path):
+def form_json(id, soup, content, searchword, begin_time, current_path):
     info = {}
     # 获取时间
     date = soup.find_all('time')[0].text
@@ -82,8 +82,9 @@ def form_json(id, soup, content, searchword, begin_time, path):
     print('author:', author)
     info['author'] = author
     # 获取页数
-    print(path)
-    page_num = get_pagenum(path)
+    # print(path)
+    pdf_save_path = os.path.join(current_path, str(id) + '.pdf')
+    page_num = get_pagenum(pdf_save_path)
     print("Number of pages:", page_num)
     info['page_num'] = page_num
     # 获取title
@@ -91,7 +92,8 @@ def form_json(id, soup, content, searchword, begin_time, path):
     print('title:', title)
     info['title'] = title
     # print(info)
-    with open(searchword+'/'+id+'.json', 'w') as f:
+    json_save_path = os.path.join(current_path, str(id) + '.json')
+    with open(json_save_path, 'w') as f:
         f.write(json.dumps(info, ensure_ascii=False, indent=4, separators=(',', ':')))
     return True
 
@@ -139,10 +141,10 @@ def process_article(id, words_min, searchword, keywords, begin_time):
         config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
         pdfkit.from_url(url, pdf_save_path, configuration=config)
 
-        # 获取json信息
-        # conti = form_json(id, soup, raw_txt, searchword, begin_time, pdf_save_path)
-        # if conti == False:
-        #     return False
+        #获取json信息
+        conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path)
+        if conti == False:
+            return False
     # print(result)
     return True
 
@@ -215,18 +217,17 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
     print("Found articles count: " + str(len(ids)))
     # os.chdir(ROOT_DIR)
     keyword_dir = os.path.join(ROOT_DIR, 'cache', searchword)
-    print('PATH: ________ '+keyword_dir)
     if searchword not in os.listdir('cache'):
         os.mkdir(keyword_dir)
     if 'report' not in os.listdir(keyword_dir):
         os.mkdir(os.path.join(keyword_dir, 'report'))
     if 'woshipm' not in os.listdir(os.path.join(keyword_dir, 'report')):
         os.mkdir(os.path.join(keyword_dir, 'report', 'woshipm'))
-    # for id in ids:
-    #     print("Processing article #" + str(id))
-    #     status = process_article(id, int(words_min), searchword, keywords, begin_time)
-    #     if status == False:
-    #         break
+    for id in ids:
+        print("Processing article #" + str(id))
+        status = process_article(id, int(words_min), searchword, keywords, begin_time)
+        if status == False:
+            break
 
 
 if __name__=="__main__":

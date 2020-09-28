@@ -13,11 +13,11 @@ import time
 
 
 def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
-    fxbg.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
-             num_years=num_years)
-    robo.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
-             num_years=num_years)
-    _36kr.run(search_keyword=search_keyword, num_years=num_years)
+    # fxbg.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
+    #          num_years=num_years)
+    # robo.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
+    #          num_years=num_years)
+    # _36kr.run(search_keyword=search_keyword, num_years=num_years)
     wspm.run(search_keyword, '3000', num_years, 30, '')
 
     # cyzone.run(search_keyword=search_keyword)
