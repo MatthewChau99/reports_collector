@@ -5,7 +5,9 @@ from typing import Optional
 
 import requests
 from fake_useragent import UserAgent
-from definitions import ROOT_DIR
+from definitions import ROOT_DIR, OSS_PATH
+import oss.mongodb as mg
+import oss.oss as ossfile
 from utils import bwlist
 from utils.errors import NoDocError
 
@@ -168,6 +170,13 @@ class FXBG:
 
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
             print('saving pdf with id: %s' % pdf_id)
+            print('the source url is: '+url_list[pdf_id]['download_url'])
+
+            # upload to oss
+            oss_path = 'report/fxbg/' + str(pdf_id) + '.pdf'
+            print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
+            ossfile.upload_file(oss_path, pdf_save_path)
+
             with open(pdf_save_path, 'wb') as f:
                 f.write(content)
 
@@ -176,6 +185,9 @@ class FXBG:
 
             with open(txt_save_path, 'w', encoding='utf-8') as f:
                 json.dump(doc_info, f, ensure_ascii=False, indent=4)
+
+            # store doc_info to mongodb
+            mg.insert_data(doc_info, 'fxbg')
 
             pdf_count += 1
 

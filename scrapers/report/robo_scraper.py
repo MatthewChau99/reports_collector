@@ -2,13 +2,15 @@ import datetime
 import json
 import os
 
-from definitions import ROOT_DIR
+from definitions import ROOT_DIR, OSS_PATH
 from utils.get_cookies import get_cookies
 import requests
 from fake_useragent import UserAgent
 from utils import bwlist
 from utils.errors import NoDocError
 import pprint as pp
+import oss.mongodb as mg
+import oss.oss as ossfile
 
 
 class ROBO:
@@ -136,10 +138,18 @@ class ROBO:
                 with open(pdf_save_path, 'wb') as f:
                     f.write(content)
 
+                # upload to oss
+                oss_path = 'report/robo/' + str(pdf_id) + '.pdf'
+                print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
+                ossfile.upload_file(oss_path, pdf_save_path)
+
                 doc_info = url_list[pdf_id]
 
                 with open(txt_save_path, 'w', encoding='utf-8') as f:
                     json.dump(doc_info, f, ensure_ascii=False, indent=4)
+
+                # store doc_info to mongodb
+                mg.insert_data(doc_info, 'robo')
 
                 pdf_count += 1
 
