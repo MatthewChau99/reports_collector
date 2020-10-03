@@ -105,7 +105,7 @@ class ROBO:
 
         return updated_json
 
-    def download_pdf(self, search_keyword: str, doc_id_list: dict):
+    def download_pdf(self, search_keyword: str, doc_id_list: dict, get_pdf: bool):
         url_list = self.update_json(doc_id_list)
 
         pdf_count = 0
@@ -125,23 +125,25 @@ class ROBO:
         current_path = os.path.join(keyword_dir, 'report', '萝卜投研')
 
         for pdf_id in url_list:
-            content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
-            content.encoding = 'utf-8'
-            content = content.content
+            if get_pdf:
+                content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
+                content.encoding = 'utf-8'
+                content = content.content
 
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
             txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
 
             try:
-                print('saving pdf with id: %s' % pdf_id)
+                if get_pdf:
+                    print('saving pdf with id: %s' % pdf_id)
 
-                with open(pdf_save_path, 'wb') as f:
-                    f.write(content)
+                    with open(pdf_save_path, 'wb') as f:
+                        f.write(content)
 
-                # upload to oss
-                oss_path = 'report/robo/' + str(pdf_id) + '.pdf'
-                print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
-                ossfile.upload_file(oss_path, pdf_save_path)
+                    # upload to oss
+                    oss_path = 'report/robo/' + str(pdf_id) + '.pdf'
+                    print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
+                    ossfile.upload_file(oss_path, pdf_save_path)
 
                 doc_info = url_list[pdf_id]
 
@@ -178,21 +180,21 @@ class ROBO:
 
         print('--------Finished downloading %d pdfs from 萝卜投研--------' % pdf_count)
 
-    def run(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+    def run(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
         print('--------Begin searching pdfs from 萝卜投研--------')
         try:
             pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
-            self.download_pdf(search_keyword, pdf_id_list)
+            self.download_pdf(search_keyword, pdf_id_list, get_pdf)
         except NoDocError:
             print('--------No documents found in 萝卜投研--------')
             pass
 
 
-def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
     robo_scraper = ROBO()
     robo_scraper.run(search_keyword=search_keyword, filter_keyword=filter_keyword,
                      pdf_min_num_page=pdf_min_num_page,
-                     num_years=num_years)
+                     num_years=num_years, get_pdf=get_pdf)
 
 
 if __name__ == '__main__':

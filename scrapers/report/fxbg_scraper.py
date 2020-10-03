@@ -139,7 +139,7 @@ class FXBG:
         print('--------Found %s pdfs in 发现报告--------' % len(doc_list))
         return doc_list
 
-    def download_pdf(self, search_keyword: str, url_list: dict):
+    def download_pdf(self, search_keyword: str, url_list: dict, get_pdf: bool):
         """
         通过提供的pdf下载url下载所有pdf至新建文件夹
         下载文件路径: 根目录/cache/[关键词]/report/发现报告/
@@ -163,22 +163,22 @@ class FXBG:
         pdf_count = 0
 
         for pdf_id in url_list:
-            content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
-            content.encoding = 'utf-8'
-
-            content = content.content
-
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
-            print('saving pdf with id: %s' % pdf_id)
-            print('the source url is: '+url_list[pdf_id]['download_url'])
+            if get_pdf:
+                content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
+                content.encoding = 'utf-8'
 
-            # upload to oss
-            oss_path = 'report/fxbg/' + str(pdf_id) + '.pdf'
-            print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
-            ossfile.upload_file(oss_path, pdf_save_path)
+                content = content.content
 
-            with open(pdf_save_path, 'wb') as f:
-                f.write(content)
+                print('saving pdf with id: %s' % pdf_id)
+                print('the source url is: '+url_list[pdf_id]['download_url'])
+
+                with open(pdf_save_path, 'wb') as f:
+                    f.write(content)
+                # upload to oss
+                oss_path = 'report/fxbg/' + str(pdf_id) + '.pdf'
+                print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
+                ossfile.upload_file(oss_path, pdf_save_path)
 
             doc_info = url_list[pdf_id]
             txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
@@ -204,14 +204,14 @@ class FXBG:
 
         print('--------Finished downloading %d pdfs from 发现报告--------' % pdf_count)
 
-    def run_fxbg(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+    def run_fxbg(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
         print('--------Begin searching pdfs from 发现报告--------')
         pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
-        pdf_url_list = self.get_pdf_url(pdf_id_list)
-        self.download_pdf(search_keyword, pdf_url_list)
+        pdf_url_list = self.get_pdf_url(pdf_id_list, )
+        self.download_pdf(search_keyword, pdf_url_list, get_pdf)
 
 
-def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
     # User ID does not change for a fixed account
     # User Token changes for each individual login
     USER_ID = '43934'
@@ -219,7 +219,7 @@ def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_yea
     try:
         fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
         fxbg_scraper.run_fxbg(search_keyword=search_keyword, filter_keyword=filter_keyword,
-                              pdf_min_num_page=pdf_min_num_page, num_years=num_years)
+                              pdf_min_num_page=pdf_min_num_page, num_years=num_years, get_pdf=get_pdf)
     except NoDocError:
         print('--------No documents found in 发现报告--------')
         pass

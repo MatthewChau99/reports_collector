@@ -14,7 +14,7 @@ from utils.errors import NoDocError
 now = datetime.now()
 
 
-def urlParser(search_keyword, path, summary, num_years):
+def urlParser(search_keyword, path, summary, num_years, get_pdf: bool):
     url = "https://36kr.com/search/articles/" + search_keyword + "?sort=score"
 
     res = requests.get(url)  # init page
@@ -36,7 +36,7 @@ def urlParser(search_keyword, path, summary, num_years):
 
     for a in articles.find_all('a', {"class": "article-item-title weight-bold"},
                                href=True):  # find all a links with href within class
-        valid, summary = textScrape(search_keyword, "https://36kr.com" + a['href'], path, summary, num_years)
+        valid, summary = textScrape(search_keyword, "https://36kr.com" + a['href'], path, summary, num_years, get_pdf)
         if valid:
             articles_count += 1
 
@@ -70,7 +70,7 @@ def prefilter(date, num_years, search_keyword, doc_id):
     return ret
 
 
-def textScrape(search_keyword, url, path, summary, num_years):
+def textScrape(search_keyword, url, path, summary, num_years, get_pdf: bool):
     url = url
     res = requests.get(url)
     html_page = res.content
@@ -95,8 +95,9 @@ def textScrape(search_keyword, url, path, summary, num_years):
         html_save_path = os.path.join(path, str(doc_id) + '.html')
         pdf_save_path = os.path.join(path, str(doc_id) + '.pdf')
 
-        with open(html_save_path, "w", encoding='utf-8') as file:
-            file.write(str(article))
+        if get_pdf:
+            with open(html_save_path, "w", encoding='utf-8') as file:
+                file.write(str(article))
 
         # Saving doc attributes
         doc_info = {
@@ -119,7 +120,7 @@ def textScrape(search_keyword, url, path, summary, num_years):
     return valid, summary
 
 
-def run(search_keyword, num_years):
+def run(search_keyword, num_years, get_pdf: bool):
     print('--------Begin searching articles from 36kr--------')
 
     try:
@@ -143,7 +144,7 @@ def run(search_keyword, num_years):
             sum = open(os.path.join(current_path, "summary" + ".json"), "w", encoding='utf-8')
 
         summary = {}
-        urlParser(search_keyword, current_path, summary, num_years)
+        urlParser(search_keyword, current_path, summary, num_years, get_pdf)
 
     except NoDocError:
         print('--------No documents found in 36kr--------')

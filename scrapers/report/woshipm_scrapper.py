@@ -63,7 +63,7 @@ def get_urls(searchword, begin_time, art_num):
     return res
 
 
-def form_json(id, soup, content, searchword, begin_time, current_path, oss_path):
+def form_json(id, soup, content, searchword, begin_time, current_path, oss_path, get_pdf):
     info = {}
     # 获取时间
     date = soup.find_all('time')[0].text
@@ -87,7 +87,9 @@ def form_json(id, soup, content, searchword, begin_time, current_path, oss_path)
     # 获取页数
     # print(path)
     pdf_save_path = os.path.join(current_path, id + '.pdf')
-    page_num = get_pagenum(pdf_save_path)
+    if get_pdf:
+        page_num = get_pagenum(pdf_save_path)
+    else: page_num = -1
     print("Number of pages:", page_num)
     info['page_num'] = page_num
     # 获取title
@@ -112,7 +114,7 @@ def calc_keywords(content, keywords):
     print(stats)
 
 
-def process_article(id, words_min, searchword, keywords, begin_time):
+def process_article(id, words_min, searchword, keywords, begin_time, get_pdf: bool):
     url = "http://www.woshipm.com/pd/"+id+".html"
     header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36'}
     try:
@@ -143,16 +145,18 @@ def process_article(id, words_min, searchword, keywords, begin_time):
         keyword_dir = os.path.join(ROOT_DIR, 'cache', searchword)
         current_path = os.path.join(keyword_dir, 'report', 'woshipm')
         pdf_save_path = os.path.join(current_path, str(id) + '.pdf')
-        config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
-        pdfkit.from_url(url, pdf_save_path, configuration=config)
+        oss_path = 'report/woshipm/' + id + '.pdf'
 
-        #上传pdf to oss
-        oss_path = 'report/woshipm/'+id+'.pdf'
-        print('Uploading file to ali_oss at '+OSS_PATH+oss_path)
-        ossfile.upload_file(oss_path, pdf_save_path)
+        if get_pdf:
+            config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
+            pdfkit.from_url(url, pdf_save_path, configuration=config)
+
+            #上传pdf to oss
+            print('Uploading file to ali_oss at '+OSS_PATH+oss_path)
+            ossfile.upload_file(oss_path, pdf_save_path)
 
         #获取json信息
-        conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path, oss_path)
+        conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path, oss_path, get_pdf)
         if conti == False:
             return False
     # print(result)
@@ -207,7 +211,7 @@ def main():
         if status == False:
             break
 
-def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, keywords=''):
+def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, keywords='', get_pdf=False):
     # set default values
     if num_years == '':
         cur = datetime.now()
@@ -241,7 +245,7 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
         if id_match_res!=[]:
             print('article #'+id+' is already in database. Skipped.')
             continue
-        status = process_article(id, int(words_min), searchword, keywords, begin_time)
+        status = process_article(id, int(words_min), searchword, keywords, begin_time, get_pdf)
         if status == False:
             break
     mg.show_datas('woshipm')

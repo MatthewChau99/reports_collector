@@ -13,13 +13,13 @@ import time
 import sys
 
 
-def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
     fxbg.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
-             num_years=num_years)
+             num_years=num_years, get_pdf=get_pdf)
     robo.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
-             num_years=num_years)
-    _36kr.run(search_keyword=search_keyword, num_years=num_years)
-    wspm.run(search_keyword, '3000', num_years, 15, '')
+             num_years=num_years, get_pdf=get_pdf)
+    _36kr.run(search_keyword=search_keyword, num_years=num_years, get_pdf=get_pdf)
+    wspm.run(search_keyword, '3000', num_years, 15, '', get_pdf=get_pdf)
 
     # cyzone.run(search_keyword=search_keyword)
     # huxiu.run(search_keyword=search_keyword)
@@ -32,7 +32,7 @@ def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_
 if __name__ == '__main__':
     start_time = time.time()
     if len(sys.argv) > 1:
-        search(search_keyword=sys.argv[1], filter_keyword='', pdf_min_num_page='150', num_years=1)
+        search(search_keyword=sys.argv[1], filter_keyword='', pdf_min_num_page='150', num_years=1, get_pdf=False)
     else:
-        search(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='150', num_years=1)
+        search(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='150', num_years=1, get_pdf=False)
     print("--- %s seconds ---" % (time.time() - start_time))
