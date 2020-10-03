@@ -11,6 +11,9 @@ from definitions import ROOT_DIR
 from utils import bwlist
 from utils.errors import NoDocError
 
+import oss.mongodb as mg
+import oss.oss as ossfile
+
 now = datetime.now()
 
 
@@ -89,6 +92,12 @@ def textScrape(search_keyword, url, path, summary, num_years, get_pdf: bool):
 
     valid = prefilter(date, num_years, search_keyword, doc_id)
 
+    # whitelist by database
+    id_match_res = mg.show_datas('36kr', query={'doc_id': doc_id})
+    if id_match_res:
+        print('article #' + str(doc_id) + ' is already in database. Skipped.')
+        return valid, summary
+
     if valid:
         print('Processing article %s' % doc_id)
         json_save_path = os.path.join(path, str(doc_id) + '.json')
@@ -116,6 +125,9 @@ def textScrape(search_keyword, url, path, summary, num_years, get_pdf: bool):
 
         with open(json_save_path, 'w', encoding='utf-8') as f:
             json.dump(doc_info, f, ensure_ascii=False, indent=4)
+
+        # store doc_info to mongodb
+        mg.insert_data(doc_info, '36kr')
 
     return valid, summary
 

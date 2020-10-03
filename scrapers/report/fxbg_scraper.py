@@ -163,6 +163,10 @@ class FXBG:
         pdf_count = 0
 
         for pdf_id in url_list:
+            id_match_res = mg.show_datas('fxbg', query={'doc_id': pdf_id})
+            if id_match_res:
+                print('article #' + str(pdf_id) + ' is already in database. Skipped.')
+                continue
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
             if get_pdf:
                 content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)

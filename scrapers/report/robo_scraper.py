@@ -125,6 +125,13 @@ class ROBO:
         current_path = os.path.join(keyword_dir, 'report', '萝卜投研')
 
         for pdf_id in url_list:
+            # whitelist by database
+            id_match_res = mg.show_datas('robo', query={'doc_id': pdf_id})
+            if id_match_res:
+                print('article #' + str(pdf_id) + ' is already in database. Skipped.')
+                continue
+
+            # get pdf only when get_pdf is true
             if get_pdf:
                 content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
                 content.encoding = 'utf-8'
