@@ -2,13 +2,15 @@ from definitions import ROOT_DIR
 import scrapers.report.fxbg_scraper as fxbg
 import scrapers.report.robo_scraper as robo
 import scrapers.news._36kr_scraper as _36kr
-import scrapers.news.cyzone as cyzone
-import scrapers.news.huxiu as huxiu
-import scrapers.news.iyiou as iyiou
-import scrapers.news.leiphone as leiphone
-import scrapers.news.pencilnews as pencilnews
-import scrapers.news.lieyunwang as lieyunwang
-import scrapers.report.woshipm_scrapper as wspm
+# import scrapers.news.cyzone as cyzone
+# import scrapers.news.huxiu as huxiu
+# import scrapers.news.iyiou as iyiou
+# import scrapers.news.leiphone as leiphone
+# import scrapers.news.pencilnews as pencilnews
+# import scrapers.news.lieyunwang as lieyunwang
+# import scrapers.report.woshipm_scrapper as wspm
+# import scrapers.news._51pdf as _51pdf
+# import scrapers.news._767stock as _767stock
 import time
 import sys
 
@@ -19,7 +21,7 @@ def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_
     robo.run(search_keyword=search_keyword, filter_keyword=filter_keyword, pdf_min_num_page=pdf_min_num_page,
              num_years=num_years)
     _36kr.run(search_keyword=search_keyword, num_years=num_years)
-    wspm.run(search_keyword, '3000', num_years, 15, '')
+    # wspm.run(search_keyword, '3000', num_years, 15, '')
 
     # cyzone.run(search_keyword=search_keyword)
     # huxiu.run(search_keyword=search_keyword)
@@ -27,6 +29,9 @@ def search(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_
     # leiphone.run(search_keyword=search_keyword)
     # pencilnews.run(search_keyword=search_keyword)
     # lieyunwang.run(search_keyword=search_keyword)
+
+    # _51pdf.main(search_word=search_keyword, max_art=30, max_text=300, s_date='2018-01-01')
+    # _767stock.main(search_word=search_keyword, max_art=30, max_text=300, s_date='2018-01-01')
 
 
 if __name__ == '__main__':

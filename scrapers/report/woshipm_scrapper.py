@@ -35,16 +35,17 @@ def get_url_dynamic(url):
 
 
 def get_urls(searchword, begin_time, art_num):
-    url = "http://api.woshipm.com/search/list.html?tab=0&key="+searchword+"&sortType=1"
+    url = "http://api.woshipm.com/search/list.html?tab=0&key=" + searchword + "&sortType=1"
     url = quote(url, safe=string.printable)  # to transcribe Chinese searchword in url
     res = []
     page = 1
     while len(res) < art_num:
-        cur_url = url+"&page="+str(page)
+        cur_url = url + "&page=" + str(page)
         page += 1
         print("Searching by: " + cur_url)
         # # 3 Selenium method
         try:
+            print(get_url_dynamic(cur_url))
             response = get_url_dynamic(cur_url)
         except:
             print('Error')
@@ -55,10 +56,10 @@ def get_urls(searchword, begin_time, art_num):
         articles = soup.find_all(class_='clearfix row article-cont')
 
         id_cach = [art['id'] for art in articles]
-        if len(id_cach) < 20:   # 最后一页
+        if len(id_cach) < 20:  # 最后一页
             res += id_cach
             break
-        res += id_cach[:art_num%20]
+        res += id_cach[:art_num % 20]
     print(res)
     return res
 
@@ -78,8 +79,8 @@ def form_json(id, soup, content, searchword, begin_time, current_path, oss_path)
     info['doc_id'] = int(id)
     info['doc_type'] = 'report'
     info['source'] = '人人都是产品经理'
-    info['url'] = 'http://www.woshipm.com/pd/'+id+'.html'
-    info['pdf_url'] = OSS_PATH+oss_path
+    info['url'] = 'http://www.woshipm.com/pd/' + id + '.html'
+    info['pdf_url'] = OSS_PATH + oss_path
     info['content'] = content
     author = soup.find(class_='author u-flex').find('a').text
     print('author:', author)
@@ -113,8 +114,9 @@ def calc_keywords(content, keywords):
 
 
 def process_article(id, words_min, searchword, keywords, begin_time):
-    url = "http://www.woshipm.com/pd/"+id+".html"
-    header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36'}
+    url = "http://www.woshipm.com/pd/" + id + ".html"
+    header = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.96 Safari/537.36'}
     try:
         request = urllib.request.Request(url, headers=header)
         response = urllib.request.urlopen(request).read()
@@ -133,7 +135,7 @@ def process_article(id, words_min, searchword, keywords, begin_time):
     for t in txt:
         raw_txt += t.text
 
-    if len(raw_txt) >= words_min: # 判断文本长度
+    if len(raw_txt) >= words_min:  # 判断文本长度
         calc_keywords(raw_txt, keywords)
         # 转换pdf
         print("Word count: ", len(raw_txt))
@@ -146,14 +148,14 @@ def process_article(id, words_min, searchword, keywords, begin_time):
         config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
         pdfkit.from_url(url, pdf_save_path, configuration=config)
 
-        #上传pdf to oss
-        oss_path = 'report/woshipm/'+id+'.pdf'
-        print('Uploading file to ali_oss at '+OSS_PATH+oss_path)
+        # 上传pdf to oss
+        oss_path = 'report/woshipm/' + id + '.pdf'
+        print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
         ossfile.upload_file(oss_path, pdf_save_path)
 
-        #获取json信息
+        # 获取json信息
         conti = form_json(id, soup, raw_txt, searchword, begin_time, current_path, oss_path)
-        if conti == False:
+        if not conti:
             return False
     # print(result)
     return True
@@ -171,7 +173,8 @@ def main():
         art_num = input("Max number of articles: ")
         keywords = input("keywords: ")
     else:
-        opts, args = getopt.getopt(sys.argv[1:], '-s:-w:-e:-a:-k:', ['searchword=', 'words_min=', 'begin_time=', 'art_num=', 'keywords='])
+        opts, args = getopt.getopt(sys.argv[1:], '-s:-w:-e:-a:-k:',
+                                   ['searchword=', 'words_min=', 'begin_time=', 'art_num=', 'keywords='])
         for opt_name, opt_value in opts:
             if opt_name in ('-s', 'searchword'):
                 searchword = opt_value
@@ -202,10 +205,11 @@ def main():
     ids = get_urls(searchword, begin_time, int(art_num))
     print("Found articles count: " + str(len(ids)))
     for id in ids:
-        print("Processing article #"+str(id))
+        print("Processing article #" + str(id))
         status = process_article(id, int(words_min), searchword, keywords, begin_time)
-        if status == False:
+        if not status:
             break
+
 
 def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, keywords=''):
     # set default values
@@ -216,7 +220,7 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
         print(begin_time)
     else:
         cur = datetime.now()
-        before = cur - timedelta(days=365*num_years)
+        before = cur - timedelta(days=365 * num_years)
         begin_time = before.strftime("%Y-%m-%d")
         print(begin_time)
     if keywords == '':
@@ -235,17 +239,17 @@ def run(searchword='中芯国际', words_min='3000', num_years='', art_num=30, k
         os.mkdir(os.path.join(keyword_dir, 'report', 'woshipm'))
     for id in ids:
         print("Processing article #" + str(id))
-        #check whether or not already in database
+        # check whether or not already in database
         id_match_res = mg.show_datas('woshipm', query={'doc_id': int(id)})
         # print(id_match_res)
-        if id_match_res!=[]:
-            print('article #'+id+' is already in database. Skipped.')
+        if id_match_res:
+            print('article #' + id + ' is already in database. Skipped.')
             continue
         status = process_article(id, int(words_min), searchword, keywords, begin_time)
-        if status == False:
+        if not status:
             break
     mg.show_datas('woshipm')
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
