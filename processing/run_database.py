@@ -12,7 +12,6 @@ def get_db_results(search_keyword, pdf_min_page, min_word_count, num_years):
         pdf.pop('_id')
         pdf.pop('content')
         pdf.pop('keywordCount')
-        # pdf.pop('tags')
         pdf.pop('filtered')
         pdf.pop('wordCount')
 
