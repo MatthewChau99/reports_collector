@@ -1,13 +1,15 @@
 import datetime
 import json
 import os
+import pprint as pp
 from typing import Optional
 
 import requests
 from fake_useragent import UserAgent
-from definitions import ROOT_DIR, OSS_PATH
+
 import oss.mongodb as mg
 import oss.oss as ossfile
+from definitions import ROOT_DIR, OSS_PATH
 from utils import bwlist
 from utils.errors import NoDocError
 
@@ -23,9 +25,9 @@ class FXBG:
         self.user_token = user_token
         self.user_id = str(user_id)
         self.blacklist = None
-        self.whitelist = None
+        self.whitelist = set()
         self.source = 'fxbg'
-        self.summary = {'source': 'fxbg', 'source_type': 'report', 'search_keyword': '', 'search_time': '', 'data': {}}
+        self.summary = {'source': 'fxbg', 'source_type': 'report', 'search_keyword': '', 'search_time': '', 'data': []}
 
         # Request Headers
         self.headers = {
@@ -41,6 +43,12 @@ class FXBG:
             'sec-fetch-site': 'cross-site',
             'user-agent': str(UserAgent().random)
         }
+
+    def check_database(self, search_keyword: str, pdf_min_num_page: str, num_years: int):
+        db_existing = mg.search_datas(search_keyword=search_keyword, pdf_min_page=pdf_min_num_page, min_word_count='',
+                                      num_years=num_years)
+        for file in db_existing:
+            self.whitelist.add(file['_id'])
 
     def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> dict:
         """
@@ -58,9 +66,7 @@ class FXBG:
 
         # Adding blacklist
         self.blacklist = bwlist.BWList(search_keyword, 'black')
-        self.whitelist = bwlist.BWList(search_keyword, 'white')
         blacklist_exist = self.blacklist.bwlist_exist()
-        whitelist_exist = self.whitelist.bwlist_exist()
 
         search_url = 'https://api.mofoun.com/mofoun/search/report/search'
         payload = {
@@ -93,8 +99,14 @@ class FXBG:
         # Checking blacklist
         if blacklist_exist:
             id_list = self.blacklist.bwlist_filter(id_list, self.source)
-        if whitelist_exist:
-            id_list = self.whitelist.bwlist_filter(id_list, self.source)
+
+        # Checking whitelist
+        self.check_database(search_keyword=search_keyword, pdf_min_num_page=pdf_min_num_page, num_years=num_years)
+        for doc_id in id_list.copy():
+            id_match_res = mg.show_datas('fxbg', query={'doc_id': doc_id})
+            if doc_id in self.whitelist or id_match_res:
+                print('article #' + str(doc_id) + ' is already in database. Skipped.')
+                id_list.pop(doc_id)
 
         return id_list
 
@@ -120,18 +132,21 @@ class FXBG:
                 'VERSION': '110100',
             })
             response = self.s.get(url=download_api_url, headers=headers, params=params).json()
+            # pp.pprint(response)
             # time_interval = random.randint(5, 8)
             # time.sleep(time_interval)
             doc = doc_list[doc_id]
             title = str(doc['title']).replace('<em>', '').replace('</em>', '')
+            date = doc['pdfPath'][7:17]
 
             updated_doc = {'source': self.source,
                            'doc_id': doc_id,
-                           'date': ''.join([doc['pdfPath'][7:11], doc['pdfPath'][12:14], doc['pdfPath'][15:17]]),
+                           'date': str(datetime.datetime.strptime(date, '%Y/%m/%d').date()),
                            'download_url': 'https://oss-buy.hufangde.com' + response['data'],
-                           'org_name': doc['orgName'],
+                           'org_name': doc['orgName'].replace('<em>', '').replace('</em>', ''),
                            'page_num': doc['pageNum'],
                            'doc_type': 'EXTERNAL_REPORT',
+                           'oss_path': 'report/fxbg/' + str(doc_id) + '.pdf',
                            'title': title}
 
             doc_list.update({doc_id: updated_doc})
@@ -139,7 +154,7 @@ class FXBG:
         print('--------Found %s pdfs in 发现报告--------' % len(doc_list))
         return doc_list
 
-    def download_pdf(self, search_keyword: str, url_list: dict):
+    def download_pdf(self, search_keyword: str, url_list: dict, get_pdf: bool):
         """
         通过提供的pdf下载url下载所有pdf至新建文件夹
         下载文件路径: 根目录/cache/[关键词]/report/发现报告/
@@ -163,22 +178,30 @@ class FXBG:
         pdf_count = 0
 
         for pdf_id in url_list:
-            content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
-            content.encoding = 'utf-8'
-
-            content = content.content
+            id_match_res = mg.show_datas('fxbg', query={'doc_id': pdf_id})
+            if id_match_res:
+                print('article #' + str(pdf_id) + ' is already in database. Skipped.')
+                continue
 
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
-            print('saving pdf with id: %s' % pdf_id)
-            print('the source url is: '+url_list[pdf_id]['download_url'])
 
-            # upload to oss
-            oss_path = 'report/fxbg/' + str(pdf_id) + '.pdf'
-            print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
-            ossfile.upload_file(oss_path, pdf_save_path)
+            if get_pdf:
+                content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
+                content.encoding = 'utf-8'
 
-            with open(pdf_save_path, 'wb') as f:
-                f.write(content)
+                content = content.content
+
+                print('saving pdf with id: %s' % pdf_id)
+                print('the source url is: ' + url_list[pdf_id]['download_url'])
+
+                with open(pdf_save_path, 'wb') as f:
+                    f.write(content)
+
+                # upload to oss
+                # oss_path = 'report/fxbg/' + str(pdf_id) + '.pdf'
+                # print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
+                # print(oss_path)
+                # ossfile.upload_file(oss_path, pdf_save_path)
 
             doc_info = url_list[pdf_id]
             txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
@@ -194,36 +217,38 @@ class FXBG:
             # Saving into summary
             self.summary.update({'search_keyword': search_keyword})
             self.summary.update({'search_time': str(datetime.datetime.now())})
-            self.summary['data'].update({pdf_id: pdf_save_path})
+
+            doc_info_copy = doc_info.copy()
+            doc_info_copy.pop('_id')
+            self.summary['data'].append(doc_info_copy)
 
         # Saving summary
-        if self.summary['data']:
-            summary_save_path = os.path.join(current_path, 'summary.json')
-            with open(summary_save_path, 'w', encoding='utf-8') as f:
-                json.dump(self.summary, f, ensure_ascii=False, indent=4)
+        summary_save_path = os.path.join(current_path, 'summary.json')
+        with open(summary_save_path, 'w', encoding='utf-8') as f:
+            json.dump(self.summary, f, ensure_ascii=False, indent=4)
 
         print('--------Finished downloading %d pdfs from 发现报告--------' % pdf_count)
 
-    def run_fxbg(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+    def run_fxbg(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
         print('--------Begin searching pdfs from 发现报告--------')
         pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
         pdf_url_list = self.get_pdf_url(pdf_id_list)
-        self.download_pdf(search_keyword, pdf_url_list)
+        self.download_pdf(search_keyword, pdf_url_list, get_pdf)
 
 
-def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
     # User ID does not change for a fixed account
     # User Token changes for each individual login
     USER_ID = '43934'
-    USER_TOKEN = 'mpvj5z7Vr666q4FiZjKww3hesUVIaBXbNUfxfA2VJ0bNjMVla2yM7vZaWkwGNPpL'
+    USER_TOKEN = 'NVpjo2Rm9hbVWH1Q8U4oqUC9bf7MfJlu1dzd2nLrMc8WvxEhy1yHzahewmuxpFl6'
     try:
         fxbg_scraper = FXBG(USER_TOKEN, USER_ID)
         fxbg_scraper.run_fxbg(search_keyword=search_keyword, filter_keyword=filter_keyword,
-                              pdf_min_num_page=pdf_min_num_page, num_years=num_years)
+                              pdf_min_num_page=pdf_min_num_page, num_years=num_years, get_pdf=get_pdf)
     except NoDocError:
         print('--------No documents found in 发现报告--------')
         pass
 
 
 if __name__ == '__main__':
-    run(search_keyword='可口可乐', filter_keyword='', pdf_min_num_page='1000', num_years=1)
+    run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='10', num_years=5, get_pdf=True)

@@ -155,6 +155,7 @@ class Filter:
                 try:
                     # Getting text from pdf
                     text = self.pdf_to_text(filename)[0]
+                    word_count = len(text.strip('\n'))
 
                     # Add company name to keyword
                     self.keyword_list.update({search_keyword: '搜索关键词'})
@@ -179,8 +180,10 @@ class Filter:
 
                         # Update json file
                         attributes.update({'content': text,
+                                           'wordCount': word_count,
                                            'keywordCount': keywords_count,
-                                           'tags': tags_count})
+                                           'tags': tags_count,
+                                           'filtered': 1})
                         file.close()
 
                     with open(doc_id + '.json', 'w', encoding='utf-8') as file:
@@ -226,10 +229,14 @@ class Filter:
         source_name = source_summary['source']                              # '36kr'
 
         # Removing blacklisted ids from local summary
-        if source_name in self.blacklist.list.keys():
-            for source_id in self.blacklist.list[source_name]:
-                if source_id in source_summary['data'].keys():
-                    source_summary['data'].pop(source_id)
+        for doc in source_summary['data'].copy():
+            if source_name in self.blacklist.list.keys() and doc['doc_id'] in self.blacklist.list[source_name]:
+                source_summary['data'].remove(doc)
+
+        # if source_name in self.blacklist.list.keys():
+        #     for source_id in self.blacklist.list[source_name]:
+        #         if source_id in source_summary['data'].keys():
+        #             source_summary['data'].pop(source_id)
 
         # Update to overall summary
         if search_keyword not in self.summary.keys():
@@ -240,7 +247,7 @@ class Filter:
             self.summary.update({search_keyword: updated})
 
         # Saving local summary
-        json.dump(source_summary, open('summary.json', 'w', encoding='utf-8'))
+        json.dump(source_summary, open('summary.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=4)
 
     def save_summary(self, search_keyword):
         """
@@ -287,12 +294,13 @@ def run_both_filters():
     """
     Runs both news filter and reports filter. News filter converts html to pdf, Report filter doesn't.
     """
+    start_time = time.time()
     file_filter = Filter()
     file_filter.run_filter(file_type='news')
     file_filter.run_filter(file_type='report')
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == '__main__':
-    start_time = time.time()
     run_both_filters()
-    print("--- %s seconds ---" % (time.time() - start_time))
+

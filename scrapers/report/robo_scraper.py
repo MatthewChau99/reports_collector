@@ -42,15 +42,18 @@ class ROBO:
         }
         self.source = 'robo'
         self.blacklist = None
-        self.whitelist = None
-        self.summary = {}
+        self.whitelist = set()
+        self.summary = {'source': 'robo', 'source_type': 'report', 'search_keyword': '', 'search_time': '', 'data': []}
+
+    def check_database(self, search_keyword: str, pdf_min_num_page: str, num_years: int):
+        db_existing = mg.search_datas(search_keyword=search_keyword, min_word_count='', pdf_min_page=pdf_min_num_page, num_years=num_years)
+        for file in db_existing:
+            self.whitelist.add(file['_id'])
 
     def get_pdf_id(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int) -> dict:
         # Adding blacklist
         self.blacklist = bwlist.BWList(search_keyword, 'black')
-        self.whitelist = bwlist.BWList(search_keyword, 'white')
         blacklist_exist = self.blacklist.bwlist_exist()
-        whitelist_exist = self.whitelist.bwlist_exist()
 
         search_url = 'https://gw.datayes.com/rrp_adventure/web/search'
         headers = self.headers.copy()
@@ -74,10 +77,18 @@ class ROBO:
 
         id_list = {doc['data']['id']: doc for doc in json_list}
 
+        # Filter Blacklist
         if blacklist_exist:
             id_list = self.blacklist.bwlist_filter(id_list, self.source)
-        if whitelist_exist:
-            id_list = self.whitelist.bwlist_filter(id_list, self.source)
+
+        # Filter Whitelist
+        self.check_database(search_keyword=search_keyword, pdf_min_num_page=pdf_min_num_page, num_years=num_years)
+        for doc_id in id_list.copy():
+            id_match_res = mg.show_datas('robo', query={'doc_id': str(doc_id)})
+            if doc_id in self.whitelist or id_match_res:
+                print('article #' + str(doc_id) + ' is already in database. Skipped.')
+                id_list.pop(doc_id)
+
         print('--------Found %d pdfs in 萝卜投研--------' % len(id_list))
         return id_list
 
@@ -90,22 +101,23 @@ class ROBO:
                 'downloadUrl']
 
             date = id_list[id]['data']['publishTime']
-            date = date[0:4] + date[5:7] + date[8:10]
+            date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10])).date()
 
             updated_dict = {'source': self.source,
-                            'doc_id': id,
-                            'date': date,
+                            'doc_id': str(id),
+                            'date': str(date),
                             'org_name': id_list[id]['data']['orgName'],
                             'page_num': id_list[id]['data']['pageCount'],
                             'doc_type': id_list[id]['type'],
                             'download_url': download_url,
+                            'oss_path': 'report/robo/' + str(id) + '.pdf',
                             'title': id_list[id]['data']['title']}
 
             updated_json.update({id: updated_dict})
 
         return updated_json
 
-    def download_pdf(self, search_keyword: str, doc_id_list: dict):
+    def download_pdf(self, search_keyword: str, doc_id_list: dict, get_pdf: bool):
         url_list = self.update_json(doc_id_list)
 
         pdf_count = 0
@@ -125,23 +137,29 @@ class ROBO:
         current_path = os.path.join(keyword_dir, 'report', '萝卜投研')
 
         for pdf_id in url_list:
-            content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
-            content.encoding = 'utf-8'
-            content = content.content
-
+            # whitelist by database
+            id_match_res = mg.show_datas('robo', query={'doc_id': pdf_id})
+            if id_match_res:
+                print('article #' + str(pdf_id) + ' is already in database. Skipped.')
+                continue
             pdf_save_path = os.path.join(current_path, str(pdf_id) + '.pdf')
             txt_save_path = os.path.join(current_path, str(pdf_id) + '.json')
 
+            # get pdf only when get_pdf is true
             try:
-                print('saving pdf with id: %s' % pdf_id)
+                if get_pdf:
+                    print('saving pdf with id: %s' % pdf_id)
+                    content = self.s.get(url=url_list[pdf_id]['download_url'], headers=self.headers)
+                    content.encoding = 'utf-8'
+                    content = content.content
 
-                with open(pdf_save_path, 'wb') as f:
-                    f.write(content)
+                    with open(pdf_save_path, 'wb') as f:
+                        f.write(content)
 
-                # upload to oss
-                oss_path = 'report/robo/' + str(pdf_id) + '.pdf'
-                print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
-                ossfile.upload_file(oss_path, pdf_save_path)
+                    # upload to oss
+                    oss_path = 'report/robo/' + str(pdf_id) + '.pdf'
+                    # print('Uploading file to ali_oss at ' + OSS_PATH + oss_path)
+                    # ossfile.upload_file(oss_path, pdf_save_path)
 
                 doc_info = url_list[pdf_id]
 
@@ -156,11 +174,11 @@ class ROBO:
                 self.summary.update({'source': 'robo'})
                 self.summary.update({'source_type': 'report'})
                 self.summary.update({'search_keyword': search_keyword})
-                self.summary.update({'search_time': str(datetime.datetime.now())})
+                self.summary.update({'search_time': str(datetime.datetime.now().date())})
 
-                if 'data' not in self.summary.keys():
-                    self.summary.update({'data': {}})
-                self.summary['data'].update({pdf_id: pdf_save_path})
+                doc_info_copy = doc_info.copy()
+                doc_info_copy.pop('_id')
+                self.summary['data'].append(doc_info_copy)
             except:
                 if os.path.exists(pdf_save_path):
                     os.remove(pdf_save_path)
@@ -178,22 +196,22 @@ class ROBO:
 
         print('--------Finished downloading %d pdfs from 萝卜投研--------' % pdf_count)
 
-    def run(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+    def run(self, search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
         print('--------Begin searching pdfs from 萝卜投研--------')
         try:
             pdf_id_list = self.get_pdf_id(search_keyword, filter_keyword, pdf_min_num_page, num_years)
-            self.download_pdf(search_keyword, pdf_id_list)
+            self.download_pdf(search_keyword, pdf_id_list, get_pdf)
         except NoDocError:
             print('--------No documents found in 萝卜投研--------')
             pass
 
 
-def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int):
+def run(search_keyword: str, filter_keyword: str, pdf_min_num_page: str, num_years: int, get_pdf: bool):
     robo_scraper = ROBO()
     robo_scraper.run(search_keyword=search_keyword, filter_keyword=filter_keyword,
                      pdf_min_num_page=pdf_min_num_page,
-                     num_years=num_years)
+                     num_years=num_years, get_pdf=get_pdf)
 
 
 if __name__ == '__main__':
-    run(search_keyword='中芯国际', filter_keyword='', pdf_min_num_page='100', num_years=5)
+    run(search_keyword='可口可乐', filter_keyword='', pdf_min_num_page='400', num_years=2, get_pdf=True)

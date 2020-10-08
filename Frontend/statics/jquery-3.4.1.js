@@ -7313,7 +7313,7 @@ function Animation( elem, properties, options ) {
 				length = animation.tweens.length;
 
 			for ( ; index < length; index++ ) {
-				animation.tweens[ index ].run( percent );
+				animation.tweens[ index ].run_scrapers( percent );
 			}
 
 			deferred.notifyWith( elem, [ animation, percent, remaining ] );
@@ -7361,7 +7361,7 @@ function Animation( elem, properties, options ) {
 				}
 				stopped = true;
 				for ( ; index < length; index++ ) {
-					animation.tweens[ index ].run( 1 );
+					animation.tweens[ index ].run_scrapers( 1 );
 				}
 
 				// Resolve when we played the last frame; otherwise, reject
