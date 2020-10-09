@@ -45,7 +45,7 @@ def get_urls(searchword, begin_time, art_num):
         print("Searching by: " + cur_url)
         # # 3 Selenium method
         try:
-            print(get_url_dynamic(cur_url))
+            # print(get_url_dynamic(cur_url))
             response = get_url_dynamic(cur_url)
         except:
             print('Error')
