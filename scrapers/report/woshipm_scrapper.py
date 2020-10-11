@@ -26,11 +26,19 @@ def get_pagenum(path):
 
 
 def get_url_dynamic(url):
-    driver = webdriver.Chrome()
+    chrome_driver = '/usr/local/bin/chromedriver'
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--window-size=1420,1080')
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+    driver = webdriver.Chrome(executable_path = chrome_driver, chrome_options=chrome_options)
+#    driver = webdriver.Chrome()
     driver.get(url)
-    time.sleep(0.5)
+    time.sleep(1)
     html_text = driver.page_source
     # driver.quit()
+#    print(html_text)
     return html_text
 
 

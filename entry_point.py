@@ -1,4 +1,4 @@
-import scrapers.run_scrapers as run_all
+import scrapers.run as run_all
 import processing.filter as filter
 import processing.upload as upload
 import processing.run_database as run_database
