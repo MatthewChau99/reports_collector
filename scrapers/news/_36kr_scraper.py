@@ -6,6 +6,7 @@ from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
+import pprint as pp
 
 from definitions import ROOT_DIR
 from utils import bwlist
@@ -104,10 +105,10 @@ class _36KR():
         soup = BeautifulSoup(html_page, 'html.parser')
 
         pattern = re.compile(r"(?<=\"articleDetailData\":{\"code\":0,\"data\":{\"itemId\":)[0-9]*")
-        doc_id = re.search(pattern, soup.text).group(0)
+        doc_id = re.search(pattern, str(soup)).group(0)
 
         pattern = re.compile(r"(?<=\"author\":\")(.*)(?=\",\"authorId)")
-        author = re.search(pattern, soup.text).group(0)
+        author = re.search(pattern, str(soup)).group(0)
 
         title = soup.find('h1').getText()
         title = title.replace('|', '')
