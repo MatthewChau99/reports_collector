@@ -6,6 +6,7 @@ from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
+import pprint as pp
 
 from definitions import ROOT_DIR
 from utils import bwlist
@@ -17,7 +18,7 @@ import oss.oss as ossfile
 now = datetime.now()
 
 
-class _36KR():
+class _36KR:
     def __init__(self):
         self.s = requests.Session()
         self.blacklist = None
@@ -102,8 +103,8 @@ class _36KR():
         res = requests.get(url)
         html_page = res.content
         soup = BeautifulSoup(html_page, 'html.parser')
-
-        pattern = re.compile(r"(?<=\"articleDetailData\":{\"code\":0,\"data\":{\"itemId\":)[0-9]*")
+        pattern = r"(?<=\"articleDetailData\":{\"code\":0,\"data\":{\"itemId\":)[0-9]*"
+        # pp.pprint(re.search(pattern, soup.text))
         doc_id = re.search(pattern, soup.text).group(0)
 
         pattern = re.compile(r"(?<=\"author\":\")(.*)(?=\",\"authorId)")
@@ -185,4 +186,4 @@ def run(search_keyword, min_word_count, num_years, get_pdf):
 
 
 if __name__ == '__main__':
-    run(search_keyword='可口可乐', min_word_count='3000', num_years=1, get_pdf=True)
+    run(search_keyword='水电费', min_word_count='30000', num_years=1, get_pdf=True)
