@@ -12,8 +12,9 @@ CORS(app)
 def get_query_string():
     query = request.get_json()["params"]
     # run(query.search_keyword, "", 1000, query.pdf_min_num_page, query.num_years)
-    f = open ('cache/中芯国际/db_search_results.json', "r")
+    f = open('cache/中芯国际/db_search_results.json', "r")
     data = json.loads(f.read()) 
+    print(data)
     return {
         data
     }
