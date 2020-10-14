@@ -29,7 +29,8 @@ export default function Search() {
 		JSON.stringify(params)
 		axios.post(`http://8.210.91.108:5000/`, {params})
         .then(res => {
-			console.log("fetch done")
+			console.log(res.test)
+			console.log(res.test[0])
 			setResults(res.test[0])
         })
         .catch(err => {
