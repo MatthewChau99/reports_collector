@@ -31,7 +31,7 @@ def handle(url, s_date):
 
 def get_data(url, search_word, max_text):
     json_result = {'source': 'xl', 'doc_id': '', 'date': '', 'download_url': '',
-                   'org_name': '', 'page_num': '1', 'doc_type': 'NEW', 'title': ''}
+                   'org_name': '', 'page_num': '1', 'doc_type': 'NEWS', 'title': ''}
     path = os.path.join(config.SAVE_PATH, search_word, 'news', 'xinlang')  # 路径
     res = requests.get(url=url, headers=config.HEADERS)
     res.encoding = res.apparent_encoding
@@ -47,15 +47,15 @@ def get_data(url, search_word, max_text):
             html_list = [title, description]
             html_result = public_fun.filter_space_html(html_list)
             # ==============================json=========================
-            json_result['doc_id'] = url.split('.cn/')[-1]
+            json_result['doc_id'] = doc_id
             try:
                 json_result['date'] = public_fun.filter_space_json(
-                    html.xpath('//*[@id="pub_date"]/text()')[0])[:10] \
-                    .replace('年', '-').replace('月', '-')
+                    html.xpath('//*[@id="pub_date"]/text()')[0].replace('-', ''))[:10] \
+                    .replace('年', '').replace('月', '')
             except:
                 json_result['date'] = public_fun.filter_space_json(
-                    html.xpath('//*[@class="date"]/text()')[0])[:10] \
-                    .replace('年', '-').replace('月', '-')
+                    html.xpath('//*[@class="date"]/text()')[0].replace('-', ''))[:10] \
+                    .replace('年', '').replace('月', '')
             json_result['download_url'] = url
             json_result['org_name'] = public_fun.filter_space_json(html.xpath('//*[@id="author_ename"]/text()'))
             json_result['title'] = public_fun.filter_space_json(html.xpath('//*[@class="main-title"]/text()'))
@@ -67,10 +67,9 @@ def get_data(url, search_word, max_text):
         print('文章字数不足', max_text, url)
 
 
-def main(search_word, s_date, max_art, max_text):
-    s_date = public_fun.reduce_date(s_date)
-    url1 = 'https://search.sina.com.cn/?country=usstock&q={}&c=news'.format(search_word)
-    url2_list = []
+def main(search_word, max_art, max_text, s_date):
+    url1 = 'https://search.sina.com.cn/?country=usstock&q={}&c=news'.format(search_word)  # 文章url列表
+    url2_list = []  # 文章内容url
     while url1:
         one_page_url, next_page = handle(url=url1, s_date=s_date)
         url2_list += one_page_url
@@ -78,14 +77,14 @@ def main(search_word, s_date, max_art, max_text):
             url1 = next_page
         else:
             url1 = ''
-    url2_list = url2_list[:5] if config.DEBUG else url2_list
+    url2_list = url2_list[:5] if config.DEBUG else url2_list  # 取十条测试数据
     for url2 in url2_list:
         get_data(url=url2, search_word=search_word, max_text=max_text)
 
 
 if __name__ == '__main__':
-    p1 = '人工智能'
-    p2 = 3
-    p3 = 10
-    p4 = 500
-    r = main(search_word=p1, s_date=p2, max_art=p3, max_text=p4)
+    p0 = '人工智能'
+    p1 = 100
+    p2 = 500
+    p3 = '2018-01-01'
+    r = main(search_word=p0, max_art=p1, max_text=p2, s_date=p3)

@@ -2,7 +2,6 @@ import scrapers.run as run_all
 import processing.filter as filter
 import processing.upload as upload
 import processing.run_database as run_database
-import pprint as pp
 
 
 def run(search_keyword, filter_keyword, min_words, pdf_min_num_page, num_years):
@@ -16,4 +15,4 @@ def run(search_keyword, filter_keyword, min_words, pdf_min_num_page, num_years):
 
 
 if __name__ == '__main__':
-    pp.pprint(run(search_keyword='中芯国际', filter_keyword='', min_words='3000', pdf_min_num_page='150', num_years=1))
+    run(search_keyword='中芯国际', filter_keyword='', min_words='3000', pdf_min_num_page='150', num_years=1)

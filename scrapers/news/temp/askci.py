@@ -44,22 +44,19 @@ def handle(search_word, page, s_date):
         print('url1 404错误:', res.status_code, url)
 
 
-def main(search_word, s_date, max_art, max_text):
+def main(search_word, s_date):
     '''
     铅笔道爬虫入口函数
     :param search_word:搜索关键词
     :return: None
     '''
-    s_date = public_fun.reduce_date(s_date)
     page = 1
     handle(search_word=search_word, page=page, s_date=s_date)
 
 
 
 if __name__ == '__main__':
-    p1 = '人工智能'
-    p2 = '2'
-    p3 = 10
-    p4 = 500
-    r2 = main(search_word=p1, s_date=p2, max_art=p3, max_text=p4)
+    p0 = '人工智能'
+    p3 = '2018-01-01'
+    r2 = main(search_word=p0, s_date=p3)
 

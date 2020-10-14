@@ -3,12 +3,10 @@ import requests
 from lxml import etree
 import config
 import public_fun
-from definitions import ROOT_DIR
-import pprint as pp
 
 
 def handle(url, s_date, search_word):
-    # print(url)
+    print(url)
     res = requests.get(url=url, headers=config.HEADERS, verify=False)
     if res.status_code != 404:
         res.encoding = res.apparent_encoding
@@ -20,22 +18,16 @@ def handle(url, s_date, search_word):
     titles = html.xpath('//a[@class="rlist"]/text()')
     index_next_page = 'http://www.51pdf.cn{}'
     label = html.xpath('//*[@id="ctl00_web_center_AspPager"]/table/tbody/tr/td[1]/a[4]/@href')
-    date_list = html.xpath('//*[@id="ctl00_web_center_gdv"]//tr/td[4]/text()')
     next_href = index_next_page.format(label[0]) if len(label) > 0 else None
-    path = os.path.join(ROOT_DIR, 'cache', search_word, 'report', '51pdf')  # 路径
+    path = os.path.join(config.SAVE_PATH, search_word, 'news', '51pdf')  # 路径
 
     for n in range(len(urls)):
-        json_result = {'source': 'jczxw',
-                       'doc_id': urls[n].split('/')[-1].replace('.html', '')[5:],
-                       'date': '',
-                       'download_url': index_next_page.format(urls[n]),
-                       'org_name': '',
-                       'page_num': '',
-                       'doc_type': 'EXTERNAL_REPORT',
-                       'title': titles[n]}
-        date = date_list[n].split()[0]
-        json_result['date'] = str(date[:4]) + '-' + str(date[4:6]) + '-' + str(date[6:])
-        pp.pprint(json_result)
+        json_result = {'source': 'jczxw', 'doc_id': '', 'date': '', 'download_url': '',
+                       'org_name': '', 'page_num': '1', 'doc_type': 'NEW', 'title': ''}
+        json_result['doc_id'] = urls[n].split('/')[-1].replace('.html', '')
+        # json_result['date'] = date_list[date_list(n)]
+        json_result['download_url'] = index_next_page.format(urls[n])
+        json_result['title'] = titles[n]
         public_fun.write_down_json(path=path, filename=json_result['doc_id'] + '.json', text=json_result)
     return next_href
 

@@ -1,22 +1,20 @@
-import getopt
-import json
-import os
-import re
-import string
-import sys
-import time
 import urllib.request
-from datetime import datetime, timedelta
 from urllib.parse import quote
-
+import string
 import pdfkit
 from PyPDF2 import PdfFileReader
-from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 from selenium import webdriver
-
+from bs4 import BeautifulSoup
+import json
+import re
+import os
+import sys
+import getopt
+import time
+from definitions import ROOT_DIR, OSS_PATH
 import oss.mongodb as mg
 import oss.oss as ossfile
-from definitions import ROOT_DIR, OSS_PATH
 
 
 def get_pagenum(path):

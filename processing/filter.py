@@ -1,12 +1,13 @@
 import json
-import os
 import time
 
-import pdfkit
 import xpdf_python.wrapper as xpdf
+import os
+import pdfkit
 
-from definitions import ROOT_DIR, COMPANY_NAME_OCCUR
 from utils import bwlist
+from definitions import ROOT_DIR, COMPANY_NAME_OCCUR
+import pprint as pp
 
 
 class Filter:

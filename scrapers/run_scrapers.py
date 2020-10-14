@@ -1,22 +1,17 @@
 from definitions import ROOT_DIR
-# First Batch
 import scrapers.report.fxbg_scraper as fxbg
 import scrapers.report.robo_scraper as robo
 import scrapers.report.woshipm_scrapper as wspm
 import scrapers.news._36kr_scraper as _36kr
-
-# Second Batch
-import scrapers.news.cyzone as cyzone
-import scrapers.news.huxiu as huxiu
-import scrapers.news.iyiou as iyiou
-import scrapers.news.leiphone as leiphone
-import scrapers.news.pencilnews as pencilnews
-import scrapers.news.lieyunwang as lieyunwang
-import scrapers.report.woshipm_scrapper as wspm
-
-# Third Batch
-import scrapers.news._51pdf as _51pdf
-import scrapers.news._767stock as _767stock
+# import scrapers.news.cyzone as cyzone
+# import scrapers.news.huxiu as huxiu
+# import scrapers.news.iyiou as iyiou
+# import scrapers.news.leiphone as leiphone
+# import scrapers.news.pencilnews as pencilnews
+# import scrapers.news.lieyunwang as lieyunwang
+# import scrapers.report.woshipm_scrapper as wspm
+# import scrapers.news._51pdf as _51pdf
+# import scrapers.news._767stock as _767stock
 import time
 import sys
 
