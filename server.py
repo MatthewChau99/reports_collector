@@ -40,7 +40,7 @@ def get_query_string():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
 
 # run to start environment .\env\Scripts\Activate.ps1 
 # then run py server.py

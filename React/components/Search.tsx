@@ -27,7 +27,7 @@ export default function Search() {
 			inputType: inputType
 		}
 		JSON.stringify(params)
-		axios.post(`http://127.0.0.1:5000/`, {params})
+		axios.post(`http://localhost:5000/`, {params})
         .then(res => {
 			console.log("fetch done")
 			setResults(res.data.list)
