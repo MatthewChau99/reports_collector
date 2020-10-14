@@ -73,7 +73,7 @@ def get_data(url, search_word, max_text):
     :return:
     '''
     json_result = {'source': 'blzk', 'doc_id': '', 'date': '', 'download_url': '',
-                   'org_name': '', 'page_num': '1', 'doc_type': 'NEW', 'title': ''}
+                   'org_name': '', 'page_num': '1', 'doc_type': 'REPORT', 'title': ''}
     path = os.path.join(config.SAVE_PATH, search_word, 'news', 'bailuzhiku')
     res = requests.get(url=url, headers=config.HEADERS)
     html = etree.HTML(res.text)
@@ -87,8 +87,7 @@ def get_data(url, search_word, max_text):
             html_result = public_fun.filter_space_html(html_list)
             json_result['doc_id'] = doc_id
             json_result['date'] = public_fun.filter_space_json(
-                html.xpath('//*[@class="attribute-table"]/tbody/tr[2]/td[1]/div/text()')[0]
-                .replace('-', ''))
+                html.xpath('//*[@class="attribute-table"]/tbody/tr[2]/td[1]/div/text()')[0])
             json_result['download_url'] = 'http://www.bailuzhiku.com/' + \
                                           html.xpath('//*[@class="header-tool-link download"]/@href')[0]
             try:
@@ -105,12 +104,13 @@ def get_data(url, search_word, max_text):
         print('文章字数不足', max_text)
 
 
-def main(search_word, max_art, max_text, s_date):
+def main(search_word, s_date, max_art, max_text):
     '''
     铅笔道爬虫入口函数
     :param search_word:搜索关键词
     :return: None
     '''
+    s_date = public_fun.reduce_date(s_date)
     page = 1
     url2_list = []
     while page:
@@ -126,8 +126,8 @@ def main(search_word, max_art, max_text, s_date):
 
 
 if __name__ == '__main__':
-    p0 = '人工智能'
-    p1 = 10
-    p2 = 500
-    p3 = '2018-01-01'
-    r2 = main(search_word=p0, max_art=p1, max_text=p2, s_date=p3)
+    p1 = '人工智能'
+    p2 = '2'
+    p3 = 10
+    p4 = 500
+    r2 = main(search_word=p1, s_date=p2, max_art=p3, max_text=p4)

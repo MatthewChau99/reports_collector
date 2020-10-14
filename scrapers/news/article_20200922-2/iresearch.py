@@ -48,7 +48,7 @@ def get_data(url, search_word, max_text):
     :return:
     '''
     json_result = {'source': 'irw', 'doc_id': '', 'date': '', 'download_url': '',
-                   'org_name': '', 'page_num': '1', 'doc_type': 'NEW', 'title': ''}
+                   'org_name': '', 'page_num': '1', 'doc_type': 'REPORT', 'title': ''}
     path = os.path.join(config.SAVE_PATH, search_word, 'news', 'iresearch')  # 路径
     res = requests.get(url=url, headers=config.HEADERS)
     res.encoding = res.apparent_encoding
@@ -66,9 +66,10 @@ def get_data(url, search_word, max_text):
             # ==============================json=========================
             json_result['doc_id'] = doc_id
             json_result['date'] = public_fun.filter_space_json(html.xpath('//*[@class="origin"]/em/text()')[0]
-                                                               .replace('年', '').replace('月', '').replace('日', '')[:8])
+                                                               .replace('年', '-').replace('月', '-').replace('日', '')[
+                                                               :10])
             json_result['download_url'] = url
-            json_result['org_name'] = public_fun.filter_space_json(html.xpath('//*[@class="origin"]/span/text()'))
+            json_result['org_name'] = public_fun.filter_space_json(html.xpath('//*[@class="origin"]/span/text()')).replace('\xa0', ' ')
             json_result['title'] = public_fun.filter_space_json(html.xpath('//*[@class="title"]//text()'))
             public_fun.write_down_json(path=path, filename=doc_id + '.json', text=json_result)
             public_fun.write_down_html(path=path, filename=doc_id + '.html', text=html_result)
@@ -78,7 +79,8 @@ def get_data(url, search_word, max_text):
         print('文章字数不足', max_text, url)
 
 
-def main(search_word, max_art, max_text, s_date):
+def main(search_word, s_date, max_art, max_text):
+    s_date = public_fun.reduce_date(s_date)
     url1 = 'https://s.iresearch.cn/news/{}/'.format(search_word)  # 文章url列表
     url2_list = []  # 文章内容url
     while url1:
@@ -95,7 +97,7 @@ def main(search_word, max_art, max_text, s_date):
 
 if __name__ == '__main__':
     p0 = '人工智能'
-    p1 = 100
+    p1 = 10
     p2 = 500
-    p3 = '2018-01-01'
-    r = main(search_word=p0, max_art=p1, max_text=p2, s_date=p3)
+    p3 = '5'
+    r = main(search_word=p0, s_date=p3, max_art=p1, max_text=p2)

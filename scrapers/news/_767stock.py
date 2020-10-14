@@ -11,6 +11,7 @@ import time
 import datetime
 import config
 import public_fun
+from definitions import ROOT_DIR
 
 
 # %%
@@ -29,15 +30,20 @@ def handle(url):
         next_href = index_next_page.format(html.xpath('//*[@class="next page-numbers"]/@href')[0])
     except:
         next_href = ''
-    else:
-        result = [urls[n] for n in range(len(urls))]  # 通过时间过滤url2
+    result = [urls[n] for n in range(len(urls))]  # 通过时间过滤url2
     return result, next_href
 
 
 def get_data(url, search_word, max_text):
-    json_result = {'source': 'lqzk', 'doc_id': '', 'date': '', 'download_url': '',
-                   'org_name': '', 'page_num': '1', 'doc_type': 'NEWS', 'title': ''}
-    path = os.path.join(config.SAVE_PATH, search_word, 'news', '767stock')  # 路径
+    json_result = {'source': 'lqzk',
+                   'doc_id': '',
+                   'date': '',
+                   'download_url': '',
+                   'org_name': '',
+                   'page_num': '',
+                   'doc_type': 'EXTERNAL_REPORT',
+                   'title': ''}
+    path = os.path.join(ROOT_DIR, 'cache', search_word, 'report', '767stock')  # 路径
     res = requests.get(url=url, headers=config.HEADERS)
     res.encoding = res.apparent_encoding
     html = etree.HTML(res.text)
@@ -53,7 +59,7 @@ def get_data(url, search_word, max_text):
             # ==============================json=========================
             json_result['doc_id'] = doc_id
             json_result['date'] = public_fun.filter_space_json(
-                html.xpath('//*[@class="entry-date"]/text()')[0].replace('-', ''))
+                html.xpath('//*[@class="entry-date"]/text()')[0])
             json_result['download_url'] = html.xpath('//*[@class="btn-download"]/@href')[0]
             json_result['org_name'] = public_fun.filter_space_json(
                 html.xpath('//*[@class="categories-links"]/a/text()'))
@@ -66,7 +72,8 @@ def get_data(url, search_word, max_text):
         print('文章字数不足', max_text, url)
 
 
-def main(search_word, max_art, max_text, s_date):
+def main(search_word, s_date, max_art, max_text):
+    s_date = public_fun.reduce_date(s_date)
     url1 = 'http://www.767stock.com/searchall?s_key={}'.format(search_word)  # 文章url列表
     url2_list = []  # 文章内容url
     while url1:
@@ -82,8 +89,8 @@ def main(search_word, max_art, max_text, s_date):
 
 
 if __name__ == '__main__':
-    p0 = '人工智能' # 搜索关键词
-    p1 = 100    # 获取文章最大数量
-    p2 = 500    # 文章最小字数
-    p3 = '2018-01-01'
-    r = main(search_word=p0, max_art=p1, max_text=p2, s_date=p3)
+    p1 = '人工智能'
+    p2 = '2'
+    p3 = 10
+    p4 = 500
+    r2 = main(search_word=p1, s_date=p2, max_art=p3, max_text=p4)

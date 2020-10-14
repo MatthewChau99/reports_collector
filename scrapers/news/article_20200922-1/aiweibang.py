@@ -53,20 +53,6 @@ def handle(search_word, page, s_date):
 
 
 def get_data(url, search_word, max_text):
-    '''
-    1. 网站来源 “source”（白鲸出海“bjch”/未来智库“wlzk”……）
-    2. 文章ID “doc_id”（在所爬取的网页的id）
-    3. 发表日期 “date”（格式：20200129）
-    4. 下载url “download_url”
-    5. 作者/机构 “org_name”（如 xx券商/xx证券)
-    6. 页数/字数 “page_num”/ “word_count”，如果有pdf文件就用页数，没有就用字数
-    7. 资料种类 “doc_type”（研报： “EXTERNAL_REPORT”/咨询： “NEWS”）
-    8. 文章标题 “title” ("中芯国际：首次公开发行股票并在科创板上市招股说明书")
-    :param search_word: 搜索关键词
-    :param url:url2 文章内容链接
-    :return:
-    '''
-    # url = 'https:' + url if url.startswith('//') else url
     json_result = {'source': 'awb', 'doc_id': '', 'date': '', 'download_url': '',
                    'org_name': '', 'page_num': '1', 'doc_type': 'NEW', 'title': ''}
     path = os.path.join(config.SAVE_PATH, search_word, 'news', 'aiweibang')
@@ -94,12 +80,13 @@ def get_data(url, search_word, max_text):
         print('文章字数不足', max_text)
 
 
-def main(search_word, max_art, max_text, s_date):
+def main(search_word, s_date, max_art, max_text):
     '''
     铅笔道爬虫入口函数
     :param search_word:搜索关键词
     :return: None
     '''
+    s_date = public_fun.reduce_date(s_date)
     page = 1
     url2_list = []
     while page:
@@ -116,8 +103,8 @@ def main(search_word, max_art, max_text, s_date):
 
 
 if __name__ == '__main__':
-    max_art = 100
-    max_text = 500
-    s_date = '2018-01-01'
-    s_w = '人工智能'
-    r2 = main(search_word=s_w, max_art=max_art, max_text=max_text, s_date=s_date)
+    p1 = '人工智能'
+    p2 = '2'
+    p3 = 10
+    p4 = 500
+    r2 = main(search_word=p1, s_date=p2, max_art=p3, max_text=p4)

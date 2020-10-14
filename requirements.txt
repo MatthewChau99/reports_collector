@@ -1,3 +1,5 @@
+tika
+PyPDF2
 lxml
 config
 selenium
