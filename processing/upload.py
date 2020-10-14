@@ -50,4 +50,4 @@ def transfer(search_keyword):
 
 
 if __name__ == '__main__':
-    pp.pprint(transfer('中芯国际'))
+    pp.pprint(transfer("中芯国际"))
